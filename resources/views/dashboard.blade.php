@@ -50,10 +50,30 @@
     </header>
 
     <div class="container pb-5">
+
+        <!-- عرض رسائل النجاح الخضراء بعد الحفظ بنجاح -->
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle me-3 fs-4 text-success"></i>
+                    <div>
+                        <strong>Success!</strong> {{ session('success') }}
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
         
         <!-- القسم الأول: المخازن المتاحة -->
         <div class="mb-5">
-            <h3 class="fw-bold mb-4 text-dark"><i class="fas fa-warehouse me-2 text-primary"></i>Active Warehouses & Depots</h3>
+            <!-- الهيدر مضاف له زر الإضافة التفاعلي الجديد -->
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <h3 class="fw-bold mb-0 text-dark"><i class="fas fa-warehouse me-2 text-primary"></i>Active Warehouses & Depots</h3>
+                <button class="btn btn-primary px-4 py-2 fw-semibold rounded-pill" data-bs-toggle="modal" data-bs-target="#addWarehouseModal">
+                    <i class="fas fa-plus me-2"></i>Add Warehouse
+                </button>
+            </div>
+
             <div class="row g-4">
                 @foreach($warehouses as $warehouse)
                 <div class="col-md-4">
@@ -111,6 +131,40 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- النافذة المنبثقة لإضافة مستودع جديد (Add Warehouse Modal) -->
+    <div class="modal fade" id="addWarehouseModal" tabindex="-1" aria-labelledby="addWarehouseModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light border-bottom">
+                    <h5 class="modal-title fw-bold text-dark" id="addWarehouseModalLabel"><i class="fas fa-warehouse me-2 text-primary"></i>Add New Warehouse</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <!-- نموذج إرسال البيانات المربوط بمسار الحفظ الفعلي لـ Laravel -->
+                <form action="{{ route('warehouse.store') }}" method="POST">
+                    @csrf <!-- كود الأمان والحماية الإلزامي في لارافيل -->
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label for="name" class="form-label fw-semibold">Warehouse Name</label>
+                            <input type="text" class="form-control py-2" id="name" name="name" required placeholder="e.g. Gaza Port Depot">
+                        </div>
+                        <div class="mb-3">
+                            <label for="location" class="form-label fw-semibold">Location</label>
+                            <input type="text" class="form-control py-2" id="location" name="location" required placeholder="e.g. Gaza City, Port Area">
+                        </div>
+                        <div class="mb-3">
+                            <label for="capacity" class="form-label fw-semibold">Max Capacity (Units)</label>
+                            <input type="number" class="form-control py-2" id="capacity" name="capacity" placeholder="e.g. 25000">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-top">
+                        <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold"><i class="fas fa-save me-2"></i>Save Warehouse</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
