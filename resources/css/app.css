@@ -6,6 +6,45 @@
 @source '../**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'IBM Plex Sans Arabic', 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+
+    --color-ink-50: #f4f6f6;
+    --color-ink-100: #e4e9e8;
+    --color-ink-200: #c7d1cf;
+    --color-ink-300: #9fb0ac;
+    --color-ink-400: #718984;
+    --color-ink-500: #556f6a;
+    --color-ink-600: #445a56;
+    --color-ink-700: #384946;
+    --color-ink-800: #2c3a37;
+    --color-ink-900: #16211f;
+    --color-ink-950: #0c1413;
+
+    --color-field-50: #eefaf6;
+    --color-field-100: #d3f2e7;
+    --color-field-200: #a8e5cf;
+    --color-field-300: #71d0b3;
+    --color-field-400: #3cb491;
+    --color-field-500: #1f9a79;
+    --color-field-600: #147e63;
+    --color-field-700: #0f6b5c;
+    --color-field-800: #0c5349;
+    --color-field-900: #0a4139;
+    --color-field-950: #052420;
+
+    --color-amber-alert-50: #fff8ec;
+    --color-amber-alert-100: #ffedc9;
+    --color-amber-alert-200: #ffd98d;
+    --color-amber-alert-300: #ffbe4f;
+    --color-amber-alert-400: #ffa322;
+    --color-amber-alert-500: #f88a0b;
+    --color-amber-alert-600: #d96f06;
+    --color-amber-alert-700: #b45308;
+    --color-amber-alert-800: #92410d;
+    --color-amber-alert-900: #78370f;
+}
+
+body {
+    background-color: var(--color-ink-50);
+    color: var(--color-ink-900);
 }
