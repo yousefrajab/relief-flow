@@ -78,13 +78,31 @@ Every aid request keeps a full activity timeline, not just its current status: w
 
 ---
 
-## 7. Bilingual support
+## 7. Search, filters, and export
+
+Aid requests can be filtered by status, priority, and a free-text search (location or coordinator name) — filtering happens server-side and survives pagination. Warehouses and inventory get instant client-side filtering (Alpine, no page reload) since both lists are small and unpaginated. Both the aid requests list and the impact report can be exported as CSV (UTF-8 BOM, opens cleanly in Excel) honoring whatever filters are currently applied; the impact report also keeps its existing browser print-to-PDF button for a formatted PDF copy.
+
+---
+
+## 8. Dark mode
+
+A sun/moon toggle in the sidebar (and on the public landing page) switches between light and dark, persisted in the browser via `localStorage` and applied before first paint to avoid a flash of the wrong theme. The sidebar, guest auth card, and landing-page hero/banner sections are already dark-styled by design in both modes, so only the "light card" surfaces (backgrounds, borders, text, form fields) re-theme on toggle.
+
+---
+
+## 9. Weekly analytics
+
+The impact report includes an 8-week trend chart (Chart.js) comparing aid requests submitted against deliveries confirmed week over week, alongside the existing request-status doughnut chart and delivered-items-by-category breakdown.
+
+---
+
+## 10. Bilingual support
 
 Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen/landing page at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
 
 ---
 
-## 8. Pages
+## 11. Pages
 
 Public (no login): landing page, login, register, forgot/reset password, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
 
@@ -92,7 +110,7 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 
 ---
 
-## 9. Tech stack
+## 12. Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -112,7 +130,7 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 
 ---
 
-## 10. Local setup
+## 13. Local setup
 
 ```bash
 composer install
@@ -147,7 +165,7 @@ Set `OPENAI_API_KEY` in `.env`. Without it every AI feature above still works en
 
 ---
 
-## 11. Tests
+## 14. Tests
 
 ```bash
 php artisan test
@@ -157,7 +175,7 @@ Feature tests cover: registration and admin approval (including that pending/sus
 
 ---
 
-## 12. Project structure
+## 15. Project structure
 
 ```
 app/
@@ -217,7 +235,7 @@ tests/Feature/                    # Registration/approval, aid-request lifecycle
 
 ---
 
-## 13. Visual identity
+## 16. Visual identity
 
 A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages — self-hosted, so it renders identically regardless of the visitor's network.
 
@@ -225,13 +243,13 @@ The interface is built from a small set of shared components rather than one-off
 
 ---
 
-## 14. Privacy note on the public tracking page
+## 17. Privacy note on the public tracking page
 
 `/track/{token}` is reachable by anyone with the QR code — no login. It intentionally shows only what a recipient needs to verify a shipment (status, manifest contents, driver name, origin warehouse name, destination) and **omits** the driver's phone number and precise warehouse GPS coordinates, since this page is public by design and the platform may be used in sensitive contexts.
 
 ---
 
-## 15. Before a production deploy
+## 18. Before a production deploy
 
 - Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, a freshly generated `APP_KEY`.
 - A real database engine (MySQL/PostgreSQL) instead of SQLite.
