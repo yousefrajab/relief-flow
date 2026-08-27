@@ -56,9 +56,25 @@
     --color-amber-alert-900: #78370f;
 }
 
-body {
-    background-color: var(--color-ink-50);
-    color: var(--color-ink-900);
+@layer base {
+    body {
+        background-color: var(--color-ink-50);
+        color: var(--color-ink-900);
+    }
+}
+
+/* Every text-like form field across the app was relying on the browser's
+   near-zero default padding, making inputs look thin regardless of how
+   wide their container was. Sized once here instead of per-component. */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='number'],
+input[type='tel'],
+select,
+textarea {
+    padding-block: 0.75rem;
+    padding-inline: 1rem;
 }
 
 /*
