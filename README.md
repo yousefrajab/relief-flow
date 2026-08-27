@@ -100,7 +100,10 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 | Auth | Session-based, hand-rolled registration + approval flow (no third-party auth package) |
 | Database | SQLite for local development (swap via `.env` for MySQL/PostgreSQL in production) |
 | Frontend | Blade + Alpine.js + Tailwind CSS v4 |
-| Maps | Leaflet.js + OpenStreetMap tiles (no API key required) |
+| Fonts | IBM Plex Sans / IBM Plex Sans Arabic via `@fontsource`, bundled through Vite — no Google Fonts CDN call |
+| Maps | Leaflet.js + OpenStreetMap tiles, Leaflet itself bundled locally via npm/Vite (only the map tile images are fetched live, same as any web map) |
+| Charts | Chart.js, bundled locally via npm/Vite |
+| Icons | Inline SVG icon set (`<x-icon>`), no external icon font/request |
 | AI | OpenAI Chat Completions API via `AIService`, simulation mode when no key is set |
 | Notifications | Laravel Notifications (database + mail), Twilio (SMS) and UltraMsg (WhatsApp) for driver alerts, simulation mode when unconfigured |
 | Build | Vite |
@@ -200,6 +203,9 @@ resources/views/
   dashboards/                     # admin.blade.php, depot-manager.blade.php, coordinator.blade.php
   warehouses/, items/, inventory/, aid-requests/, shipments/, admin/, profile/, reports/, map/
   components/location-picker.blade.php  # Reusable Leaflet map picker
+  components/icon.blade.php             # Shared inline SVG icon set
+  components/welcome-banner.blade.php   # Gradient dashboard greeting banner
+  components/hero-illustration.blade.php  # Landing page SVG illustration
   layouts/app.blade.php           # Sidebar shell with the notification bell for authenticated pages
   layouts/guest.blade.php         # Auth pages shell
 
@@ -213,7 +219,9 @@ tests/Feature/                    # Registration/approval, aid-request lifecycle
 
 ## 13. Visual identity
 
-A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages.
+A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages — self-hosted, so it renders identically regardless of the visitor's network.
+
+The interface is built from a small set of shared components rather than one-off styling: `<x-icon>` (an inline SVG set used throughout the sidebar, stat cards, and section headers), `<x-welcome-banner>` (the gradient greeting at the top of every dashboard), and `<x-hero-illustration>` (the hand-drawn warehouse-to-delivery graphic on the landing page). The landing page also includes a dedicated section showcasing the four AI features, and the Impact Report renders a Chart.js doughnut chart alongside its stat cards.
 
 ---
 
