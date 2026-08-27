@@ -88,6 +88,7 @@
     "Edit Item": "تعديل المادة",
     "Edit Warehouse": "تعديل المستودع",
     "Email address": "البريد الإلكتروني",
+    "Enter your email address and we'll send you a link to reset your password.": "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
     "Every AI feature runs in a safe simulation mode with zero external calls until a real key is connected — nothing about the platform depends on it.": "كل ميزة ذكاء اصطناعي تعمل في وضع محاكاة آمن بدون أي اتصال خارجي حتى يتم ربط مفتاح حقيقي — لا شيء في المنصة يعتمد على ذلك.",
     "Every request is classified normal, high, or critical from its notes.": "يتم تصنيف كل طلب إلى عادي أو مرتفع أو حرج بناءً على ملاحظاته.",
     "Field Coordination": "التنسيق الميداني",
