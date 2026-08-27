@@ -34,4 +34,9 @@ class AidRequest extends Model
     {
         return $this->hasOne(Shipment::class);
     }
+
+    public function activities()
+    {
+        return $this->hasMany(AidRequestActivity::class)->orderBy('created_at');
+    }
 }

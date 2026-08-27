@@ -1,6 +1,6 @@
 <div class="space-y-3">
     @forelse($aidRequests as $aidRequest)
-        <a href="{{ route('aid-requests.show', $aidRequest) }}" class="block bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 transition-colors">
+        <a href="{{ route('aid-requests.show', $aidRequest) }}" class="block bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 hover:shadow-md transition-all">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p class="text-sm font-bold text-ink-900">{{ $aidRequest->location }}</p>
@@ -25,6 +25,9 @@
             </div>
         </a>
     @empty
-        <p class="text-xs text-ink-400">{{ __('No aid requests yet.') }}</p>
+        <div class="flex flex-col items-center justify-center py-16 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-ink-100 text-ink-400 flex items-center justify-center mb-3"><x-icon name="clipboard" class="w-7 h-7" /></div>
+            <p class="text-xs font-bold text-ink-500">{{ __('No aid requests yet.') }}</p>
+        </div>
     @endforelse
 </div>

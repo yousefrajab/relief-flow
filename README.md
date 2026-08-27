@@ -66,21 +66,51 @@ Driver SMS/WhatsApp alerts go through `NotificationService`, wired to Twilio and
 
 ---
 
-## 5. Bilingual support
+## 5. Password reset
+
+Standard "forgot password" flow: `/forgot-password` accepts an email, and — regardless of whether that email is registered, so the page never reveals which accounts exist — replies with the same generic success message. If it is registered, a signed, time-limited reset link is emailed via `ResetPasswordNotification` (mail-only channel) using Laravel's built-in `password_reset_tokens` table and `Password` broker. Following the link opens `/reset-password/{token}`, and submitting a new password there resets it and redirects to login with a success flash. No third-party package involved — it reuses the same hand-rolled auth style and themed mail as the rest of the app.
+
+---
+
+## 6. Audit trail
+
+Every aid request keeps a full activity timeline, not just its current status: who submitted it, who rejected or dispatched it (and why/from where), and who confirmed delivery, each with a timestamp. It's logged automatically by `AidRequestController` and `ShipmentController` into the `aid_request_activities` table and rendered as a chronological log on the request's detail page — useful for accountability when multiple staff touch the same request over its lifecycle.
+
+---
+
+## 7. Search, filters, and export
+
+Aid requests can be filtered by status, priority, and a free-text search (location or coordinator name) — filtering happens server-side and survives pagination. Warehouses and inventory get instant client-side filtering (Alpine, no page reload) since both lists are small and unpaginated. Both the aid requests list and the impact report can be exported as CSV (UTF-8 BOM, opens cleanly in Excel) honoring whatever filters are currently applied; the impact report also keeps its existing browser print-to-PDF button for a formatted PDF copy.
+
+---
+
+## 8. Dark mode
+
+A sun/moon toggle in the sidebar (and on the public landing page) switches between light and dark, persisted in the browser via `localStorage` and applied before first paint to avoid a flash of the wrong theme. The sidebar, guest auth card, and landing-page hero/banner sections are already dark-styled by design in both modes, so only the "light card" surfaces (backgrounds, borders, text, form fields) re-theme on toggle.
+
+---
+
+## 9. Weekly analytics
+
+The impact report includes an 8-week trend chart (Chart.js) comparing aid requests submitted against deliveries confirmed week over week, alongside the existing request-status doughnut chart and delivered-items-by-category breakdown.
+
+---
+
+## 10. Bilingual support
 
 Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen/landing page at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
 
 ---
 
-## 6. Pages
+## 11. Pages
 
-Public (no login): landing page, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
+Public (no login): landing page, login, register, forgot/reset password, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
 
-Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, admin-managed), Relief Items (admin-managed), Inventory overview, Aid Requests (list + detail with timeline and AI-ranked dispatch), Shipments (detail with delivery confirmation + AI verification), Map (all warehouses and open requests plotted together), Impact Report (admin/depot manager), Accounts (admin), Profile, Help (role-aware FAQ).
+Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, admin-managed), Relief Items (admin-managed), Inventory overview, Aid Requests (list + detail with activity log/audit trail and AI-ranked dispatch), Shipments (detail with delivery confirmation + AI verification), Map (all warehouses and open requests plotted together), Impact Report (admin/depot manager), Accounts (admin), Profile, Help (role-aware FAQ).
 
 ---
 
-## 7. Tech stack
+## 12. Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -88,7 +118,10 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 | Auth | Session-based, hand-rolled registration + approval flow (no third-party auth package) |
 | Database | SQLite for local development (swap via `.env` for MySQL/PostgreSQL in production) |
 | Frontend | Blade + Alpine.js + Tailwind CSS v4 |
-| Maps | Leaflet.js + OpenStreetMap tiles (no API key required) |
+| Fonts | IBM Plex Sans / IBM Plex Sans Arabic via `@fontsource`, bundled through Vite — no Google Fonts CDN call |
+| Maps | Leaflet.js + OpenStreetMap tiles, Leaflet itself bundled locally via npm/Vite (only the map tile images are fetched live, same as any web map) |
+| Charts | Chart.js, bundled locally via npm/Vite |
+| Icons | Inline SVG icon set (`<x-icon>`), no external icon font/request |
 | AI | OpenAI Chat Completions API via `AIService`, simulation mode when no key is set |
 | Notifications | Laravel Notifications (database + mail), Twilio (SMS) and UltraMsg (WhatsApp) for driver alerts, simulation mode when unconfigured |
 | Build | Vite |
@@ -97,7 +130,7 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 
 ---
 
-## 8. Local setup
+## 13. Local setup
 
 ```bash
 composer install
@@ -132,7 +165,7 @@ Set `OPENAI_API_KEY` in `.env`. Without it every AI feature above still works en
 
 ---
 
-## 9. Tests
+## 14. Tests
 
 ```bash
 php artisan test
@@ -142,13 +175,14 @@ Feature tests cover: registration and admin approval (including that pending/sus
 
 ---
 
-## 10. Project structure
+## 15. Project structure
 
 ```
 app/
   Http/Controllers/
     AuthController.php            # Login / logout
     Auth/RegisteredUserController.php
+    Auth/PasswordResetController.php  # forgot/reset password
     AdminController.php           # Accounts page, approve / suspend
     DashboardController.php       # Per-role dashboard data
     WarehouseController.php       # index/show + admin-only CRUD
@@ -172,39 +206,50 @@ app/
     QrCodeService.php             # Local SVG QR generation
     NotificationService.php       # Twilio SMS + UltraMsg WhatsApp, simulation-mode fallback
   Notifications/                  # One class per event — see the Notifications table above
+                                   # + ResetPasswordNotification.php
   Mail/ReliefFlowAlertMail.php    # Shared HTML mail template, escapes all interpolated content
+  Models/AidRequestActivity.php   # One row per audit-trail entry on an aid request
   Console/Commands/CreateAdminUser.php
+
+database/migrations/
+  ..._create_aid_request_activities_table.php
 
 resources/views/
   welcome.blade.php               # Public landing page
   tracking/show.blade.php         # Public QR shipment tracker
+  auth/forgot-password.blade.php, auth/reset-password.blade.php
   dashboards/                     # admin.blade.php, depot-manager.blade.php, coordinator.blade.php
   warehouses/, items/, inventory/, aid-requests/, shipments/, admin/, profile/, reports/, map/
   components/location-picker.blade.php  # Reusable Leaflet map picker
+  components/icon.blade.php             # Shared inline SVG icon set
+  components/welcome-banner.blade.php   # Gradient dashboard greeting banner
+  components/hero-illustration.blade.php  # Landing page SVG illustration
   layouts/app.blade.php           # Sidebar shell with the notification bell for authenticated pages
   layouts/guest.blade.php         # Auth pages shell
 
 lang/ar.json                      # Arabic translations (English is the fallback/default)
 tests/Feature/                    # Registration/approval, aid-request lifecycle, admin resource
                                    # management, public pages, AI/logistics services, profile,
-                                   # notifications
+                                   # notifications, password reset, audit trail
 ```
 
 ---
 
-## 11. Visual identity
+## 16. Visual identity
 
-A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages.
+A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages — self-hosted, so it renders identically regardless of the visitor's network.
+
+The interface is built from a small set of shared components rather than one-off styling: `<x-icon>` (an inline SVG set used throughout the sidebar, stat cards, and section headers), `<x-welcome-banner>` (the gradient greeting at the top of every dashboard), and `<x-hero-illustration>` (the hand-drawn warehouse-to-delivery graphic on the landing page). The landing page also includes a dedicated section showcasing the four AI features, and the Impact Report renders a Chart.js doughnut chart alongside its stat cards.
 
 ---
 
-## 12. Privacy note on the public tracking page
+## 17. Privacy note on the public tracking page
 
 `/track/{token}` is reachable by anyone with the QR code — no login. It intentionally shows only what a recipient needs to verify a shipment (status, manifest contents, driver name, origin warehouse name, destination) and **omits** the driver's phone number and precise warehouse GPS coordinates, since this page is public by design and the platform may be used in sensitive contexts.
 
 ---
 
-## 13. Before a production deploy
+## 18. Before a production deploy
 
 - Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, a freshly generated `APP_KEY`.
 - A real database engine (MySQL/PostgreSQL) instead of SQLite.

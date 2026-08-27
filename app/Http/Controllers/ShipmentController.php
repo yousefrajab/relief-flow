@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AidRequestActivity;
 use App\Models\Shipment;
 use App\Models\User;
 use App\Notifications\ShipmentDeliveredNotification;
@@ -9,6 +10,7 @@ use App\Services\AIService;
 use App\Services\QrCodeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
 
@@ -49,6 +51,15 @@ class ShipmentController extends Controller
 
         $shipment->update($update);
         $shipment->aidRequest->update(['status' => 'delivered']);
+
+        AidRequestActivity::create([
+            'aid_request_id' => $shipment->aid_request_id,
+            'user_id' => Auth::id(),
+            'action' => 'delivered',
+            'notes' => isset($update['ai_verification_status'])
+                ? __('AI verification: :status', ['status' => $update['ai_verification_status']])
+                : null,
+        ]);
 
         $staff = User::whereIn('role', ['admin', 'depot_manager'])->where('status', 'active')->get();
         if ($staff->isNotEmpty()) {

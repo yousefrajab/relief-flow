@@ -3,15 +3,18 @@
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-bold text-ink-900">{{ __('Relief Items') }}</h1>
             @if(auth()->user()->role === 'admin')
-                <button type="button" x-data x-on:click="$dispatch('open-modal', 'add-item')" class="px-4 py-2.5 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold">+ {{ __('Add Item') }}</button>
+                <button type="button" x-data x-on:click="$dispatch('open-modal', 'add-item')" class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold"><x-icon name="plus" class="w-4 h-4" /> {{ __('Add Item') }}</button>
             @endif
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             @forelse($items as $item)
-                <div class="bg-white border border-ink-100 rounded-2xl p-5 space-y-2">
+                <div class="bg-white border border-ink-100 rounded-2xl p-5 space-y-2 hover:shadow-md transition-shadow">
                     <div class="flex items-start justify-between gap-2">
-                        <p class="text-sm font-bold text-ink-900">{{ $item->name }}</p>
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-field-50 text-field-600 flex items-center justify-center shrink-0"><x-icon name="box" class="w-4 h-4" /></div>
+                            <p class="text-sm font-bold text-ink-900">{{ $item->name }}</p>
+                        </div>
                         <span class="text-[10px] font-bold bg-ink-100 text-ink-600 rounded-full px-2.5 py-1">{{ $item->category }}</span>
                     </div>
                     <p class="text-[11px] text-ink-500">{{ __('Unit') }}: {{ $item->unit }} · {{ __('Stocked in') }} {{ $item->inventories_count }} {{ __('warehouse(s)') }}</p>
@@ -52,7 +55,10 @@
                     @endif
                 </div>
             @empty
-                <p class="text-xs text-ink-400">{{ __('No relief items yet.') }}</p>
+                <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                    <div class="w-14 h-14 rounded-2xl bg-ink-100 text-ink-400 flex items-center justify-center mb-3"><x-icon name="box" class="w-7 h-7" /></div>
+                    <p class="text-xs font-bold text-ink-500">{{ __('No relief items yet.') }}</p>
+                </div>
             @endforelse
         </div>
     </div>

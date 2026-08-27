@@ -8,9 +8,12 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                     @foreach($pendingUsers as $pending)
                         <div class="bg-white border border-amber-alert-200 rounded-2xl p-4 flex items-center justify-between gap-3">
-                            <div>
-                                <p class="text-xs font-bold text-ink-900">{{ $pending->name }}</p>
-                                <p class="text-[11px] text-ink-500">{{ $pending->email }} · {{ $pending->role === 'depot_manager' ? __('Depot Manager') : __('Field Coordinator') }}</p>
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center font-bold text-xs shrink-0">{{ mb_strtoupper(mb_substr($pending->name, 0, 1)) }}</div>
+                                <div>
+                                    <p class="text-xs font-bold text-ink-900">{{ $pending->name }}</p>
+                                    <p class="text-[11px] text-ink-500">{{ $pending->email }} · {{ $pending->role === 'depot_manager' ? __('Depot Manager') : __('Field Coordinator') }}</p>
+                                </div>
                             </div>
                             <div class="flex gap-2 shrink-0">
                                 <form method="POST" action="{{ route('users.approve', $pending) }}">
@@ -34,7 +37,10 @@
                 @foreach($allUsers as $member)
                     <div class="bg-white border border-ink-100 rounded-2xl p-4">
                         <div class="flex items-start justify-between gap-2">
-                            <p class="text-xs font-bold text-ink-900">{{ $member->name }}</p>
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-full bg-field-50 text-field-600 flex items-center justify-center font-bold text-[11px] shrink-0">{{ mb_strtoupper(mb_substr($member->name, 0, 1)) }}</div>
+                                <p class="text-xs font-bold text-ink-900">{{ $member->name }}</p>
+                            </div>
                             <x-status-badge :status="$member->status" />
                         </div>
                         <p class="text-[11px] text-ink-500 mt-1">{{ $member->email }}</p>

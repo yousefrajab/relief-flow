@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AidRequestController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -44,6 +45,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
     Route::get('/register', [RegisteredUserController::class, 'create'])->name('register');
     Route::post('/register', [RegisteredUserController::class, 'store'])->name('register.store');
+
+    Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->name('password.update');
 });
 
 Route::middleware('auth')->group(function () {
@@ -55,6 +61,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/help', fn () => view('help'))->name('help');
         Route::get('/map', [MapController::class, 'show'])->name('map.show');
         Route::get('/reports', [ReportController::class, 'show'])->name('reports.show');
+        Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -69,6 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
 
         Route::get('/aid-requests', [AidRequestController::class, 'index'])->name('aid-requests.index');
+        Route::get('/aid-requests/export', [AidRequestController::class, 'export'])->name('aid-requests.export');
         Route::get('/aid-requests/create', [AidRequestController::class, 'create'])->name('aid-requests.create');
         Route::get('/aid-requests/{aidRequest}', [AidRequestController::class, 'show'])->name('aid-requests.show');
         Route::post('/aid-requests', [AidRequestController::class, 'store'])->name('aid-requests.store');
