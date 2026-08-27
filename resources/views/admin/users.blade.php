@@ -9,7 +9,13 @@
                     @foreach($pendingUsers as $pending)
                         <div class="bg-white border border-amber-alert-200 rounded-2xl p-4 flex items-center justify-between gap-3">
                             <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-full bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center font-bold text-xs shrink-0">{{ mb_strtoupper(mb_substr($pending->name, 0, 1)) }}</div>
+                                <div class="w-9 h-9 rounded-full bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
+                                    @if($pending->avatar_url)
+                                        <img src="{{ $pending->avatar_url }}" alt="{{ $pending->name }}" class="w-full h-full object-cover">
+                                    @else
+                                        {{ mb_strtoupper(mb_substr($pending->name, 0, 1)) }}
+                                    @endif
+                                </div>
                                 <div>
                                     <p class="text-xs font-bold text-ink-900">{{ $pending->name }}</p>
                                     <p class="text-[11px] text-ink-500">{{ $pending->email }} · {{ $pending->role === 'depot_manager' ? __('Depot Manager') : __('Field Coordinator') }}</p>
@@ -38,7 +44,13 @@
                     <div class="bg-white border border-ink-100 rounded-2xl p-4">
                         <div class="flex items-start justify-between gap-2">
                             <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-full bg-field-50 text-field-600 flex items-center justify-center font-bold text-[11px] shrink-0">{{ mb_strtoupper(mb_substr($member->name, 0, 1)) }}</div>
+                                <div class="w-8 h-8 rounded-full bg-field-50 text-field-600 flex items-center justify-center font-bold text-[11px] shrink-0 overflow-hidden">
+                                    @if($member->avatar_url)
+                                        <img src="{{ $member->avatar_url }}" alt="{{ $member->name }}" class="w-full h-full object-cover">
+                                    @else
+                                        {{ mb_strtoupper(mb_substr($member->name, 0, 1)) }}
+                                    @endif
+                                </div>
                                 <p class="text-xs font-bold text-ink-900">{{ $member->name }}</p>
                             </div>
                             <x-status-badge :status="$member->status" />

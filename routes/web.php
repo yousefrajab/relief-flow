@@ -65,6 +65,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
         Route::get('/warehouses', [WarehouseController::class, 'index'])->name('warehouses.index');

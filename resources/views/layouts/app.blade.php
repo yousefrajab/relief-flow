@@ -65,8 +65,12 @@
 
                 <div class="bg-white/5 rounded-2xl p-3.5">
                     <div class="flex items-center gap-2.5">
-                        <div class="w-8 h-8 rounded-full bg-field-500/20 border border-field-400/30 flex items-center justify-center text-field-300 font-bold text-xs shrink-0">
-                            {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                        <div class="w-8 h-8 rounded-full bg-field-500/20 border border-field-400/30 flex items-center justify-center text-field-300 font-bold text-xs shrink-0 overflow-hidden">
+                            @if(auth()->user()->avatar_url)
+                                <img src="{{ auth()->user()->avatar_url }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                            @else
+                                {{ mb_strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}
+                            @endif
                         </div>
                         <div class="min-w-0">
                             <p class="text-xs font-bold text-white truncate">{{ auth()->user()->name }}</p>
