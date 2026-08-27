@@ -7,14 +7,20 @@ use App\Models\AidRequestItem;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\Shipment;
+use App\Models\User;
 use App\Models\Warehouse;
+use App\Notifications\AidRequestRejectedNotification;
+use App\Notifications\AidRequestSubmittedNotification;
+use App\Notifications\ShipmentDispatchedNotification;
 use App\Services\AIService;
 use App\Services\LogisticsService;
+use App\Services\NotificationService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class AidRequestController extends Controller
 {
@@ -80,6 +86,11 @@ class AidRequestController extends Controller
             return $aidRequest;
         });
 
+        $staff = User::whereIn('role', ['admin', 'depot_manager'])->where('status', 'active')->get();
+        if ($staff->isNotEmpty()) {
+            Notification::send($staff, new AidRequestSubmittedNotification($aidRequest));
+        }
+
         return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Field aid request has been submitted and is pending review.'));
     }
 
@@ -110,10 +121,12 @@ class AidRequestController extends Controller
             'rejection_reason' => $request->rejection_reason,
         ]);
 
+        $aidRequest->user->notify(new AidRequestRejectedNotification($aidRequest));
+
         return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Aid request has been rejected.'));
     }
 
-    public function dispatch(Request $request, AidRequest $aidRequest): RedirectResponse
+    public function dispatch(Request $request, AidRequest $aidRequest, NotificationService $notificationService): RedirectResponse
     {
         $this->authorize('dispatch', $aidRequest);
 
@@ -163,6 +176,18 @@ class AidRequestController extends Controller
                 'qr_code_token' => 'RF-'.strtoupper(bin2hex(random_bytes(4))),
             ]);
         });
+
+        $shipment->setRelation('warehouse', $warehouse);
+        $aidRequest->user->notify(new ShipmentDispatchedNotification($shipment));
+
+        $trackingUrl = route('tracking.show', $shipment->qr_code_token);
+        $driverMessage = __('New ReliefFlow delivery task: pick up from :warehouse for :location. Track: :url', [
+            'warehouse' => $warehouse->name,
+            'location' => $aidRequest->location,
+            'url' => $trackingUrl,
+        ]);
+        $notificationService->sendSMS($request->driver_phone, $driverMessage);
+        $notificationService->sendWhatsApp($request->driver_phone, $driverMessage);
 
         return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Shipment dispatched successfully. Tracking token: :token', ['token' => $shipment->qr_code_token]));
     }

@@ -39,4 +39,15 @@ return [
         'key' => env('OPENAI_API_KEY'),
     ],
 
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_NUMBER'),
+    ],
+
+    'ultramsg' => [
+        'instance_id' => env('ULTRAMSG_INSTANCE_ID'),
+        'token' => env('ULTRAMSG_TOKEN'),
+    ],
+
 ];
