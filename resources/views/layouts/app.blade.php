@@ -104,7 +104,7 @@
                         @endif
                     </button>
 
-                    <div x-show="open" x-cloak x-transition class="absolute {{ app()->getLocale() === 'ar' ? 'start-0' : 'end-0' }} mt-2 w-80 bg-white border border-ink-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+                    <div x-show="open" x-cloak x-transition class="absolute end-0 mt-2 w-80 max-w-[90vw] bg-white border border-ink-100 rounded-2xl shadow-xl z-50 overflow-hidden">
                         <div class="flex items-center justify-between px-4 py-3 border-b border-ink-100">
                             <p class="text-xs font-bold text-ink-900">{{ __('Notifications') }}</p>
                             @if($unread->count() > 0)
