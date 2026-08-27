@@ -66,21 +66,33 @@ Driver SMS/WhatsApp alerts go through `NotificationService`, wired to Twilio and
 
 ---
 
-## 5. Bilingual support
+## 5. Password reset
+
+Standard "forgot password" flow: `/forgot-password` accepts an email, and — regardless of whether that email is registered, so the page never reveals which accounts exist — replies with the same generic success message. If it is registered, a signed, time-limited reset link is emailed via `ResetPasswordNotification` (mail-only channel) using Laravel's built-in `password_reset_tokens` table and `Password` broker. Following the link opens `/reset-password/{token}`, and submitting a new password there resets it and redirects to login with a success flash. No third-party package involved — it reuses the same hand-rolled auth style and themed mail as the rest of the app.
+
+---
+
+## 6. Audit trail
+
+Every aid request keeps a full activity timeline, not just its current status: who submitted it, who rejected or dispatched it (and why/from where), and who confirmed delivery, each with a timestamp. It's logged automatically by `AidRequestController` and `ShipmentController` into the `aid_request_activities` table and rendered as a chronological log on the request's detail page — useful for accountability when multiple staff touch the same request over its lifecycle.
+
+---
+
+## 7. Bilingual support
 
 Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen/landing page at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
 
 ---
 
-## 6. Pages
+## 8. Pages
 
-Public (no login): landing page, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
+Public (no login): landing page, login, register, forgot/reset password, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
 
-Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, admin-managed), Relief Items (admin-managed), Inventory overview, Aid Requests (list + detail with timeline and AI-ranked dispatch), Shipments (detail with delivery confirmation + AI verification), Map (all warehouses and open requests plotted together), Impact Report (admin/depot manager), Accounts (admin), Profile, Help (role-aware FAQ).
+Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, admin-managed), Relief Items (admin-managed), Inventory overview, Aid Requests (list + detail with activity log/audit trail and AI-ranked dispatch), Shipments (detail with delivery confirmation + AI verification), Map (all warehouses and open requests plotted together), Impact Report (admin/depot manager), Accounts (admin), Profile, Help (role-aware FAQ).
 
 ---
 
-## 7. Tech stack
+## 9. Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -97,7 +109,7 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 
 ---
 
-## 8. Local setup
+## 10. Local setup
 
 ```bash
 composer install
@@ -132,7 +144,7 @@ Set `OPENAI_API_KEY` in `.env`. Without it every AI feature above still works en
 
 ---
 
-## 9. Tests
+## 11. Tests
 
 ```bash
 php artisan test
@@ -142,13 +154,14 @@ Feature tests cover: registration and admin approval (including that pending/sus
 
 ---
 
-## 10. Project structure
+## 12. Project structure
 
 ```
 app/
   Http/Controllers/
     AuthController.php            # Login / logout
     Auth/RegisteredUserController.php
+    Auth/PasswordResetController.php  # forgot/reset password
     AdminController.php           # Accounts page, approve / suspend
     DashboardController.php       # Per-role dashboard data
     WarehouseController.php       # index/show + admin-only CRUD
@@ -172,12 +185,18 @@ app/
     QrCodeService.php             # Local SVG QR generation
     NotificationService.php       # Twilio SMS + UltraMsg WhatsApp, simulation-mode fallback
   Notifications/                  # One class per event — see the Notifications table above
+                                   # + ResetPasswordNotification.php
   Mail/ReliefFlowAlertMail.php    # Shared HTML mail template, escapes all interpolated content
+  Models/AidRequestActivity.php   # One row per audit-trail entry on an aid request
   Console/Commands/CreateAdminUser.php
+
+database/migrations/
+  ..._create_aid_request_activities_table.php
 
 resources/views/
   welcome.blade.php               # Public landing page
   tracking/show.blade.php         # Public QR shipment tracker
+  auth/forgot-password.blade.php, auth/reset-password.blade.php
   dashboards/                     # admin.blade.php, depot-manager.blade.php, coordinator.blade.php
   warehouses/, items/, inventory/, aid-requests/, shipments/, admin/, profile/, reports/, map/
   components/location-picker.blade.php  # Reusable Leaflet map picker
@@ -187,24 +206,24 @@ resources/views/
 lang/ar.json                      # Arabic translations (English is the fallback/default)
 tests/Feature/                    # Registration/approval, aid-request lifecycle, admin resource
                                    # management, public pages, AI/logistics services, profile,
-                                   # notifications
+                                   # notifications, password reset, audit trail
 ```
 
 ---
 
-## 11. Visual identity
+## 13. Visual identity
 
 A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages.
 
 ---
 
-## 12. Privacy note on the public tracking page
+## 14. Privacy note on the public tracking page
 
 `/track/{token}` is reachable by anyone with the QR code — no login. It intentionally shows only what a recipient needs to verify a shipment (status, manifest contents, driver name, origin warehouse name, destination) and **omits** the driver's phone number and precise warehouse GPS coordinates, since this page is public by design and the platform may be used in sensitive contexts.
 
 ---
 
-## 13. Before a production deploy
+## 15. Before a production deploy
 
 - Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, a freshly generated `APP_KEY`.
 - A real database engine (MySQL/PostgreSQL) instead of SQLite.

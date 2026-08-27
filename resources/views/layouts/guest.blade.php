@@ -23,6 +23,12 @@
             <span class="text-2xl font-bold text-white tracking-tight">ReliefFlow</span>
         </div>
 
+        @if(session('success'))
+            <div class="bg-field-500/10 border border-field-500/20 text-field-300 text-xs font-bold rounded-2xl px-4 py-3 mb-4">
+                {{ session('success') }}
+            </div>
+        @endif
+
         <div class="bg-ink-800/60 border border-white/5 rounded-3xl shadow-2xl shadow-black/40 p-8 backdrop-blur">
             {{ $slot }}
         </div>
