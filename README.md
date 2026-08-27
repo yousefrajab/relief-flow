@@ -1,59 +1,192 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ReliefFlow
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A humanitarian logistics coordination platform connecting **relief warehouses**, **depot managers**, and **field coordinators** to track relief item stock, route aid requests, and confirm deliveries with a QR-verified dispatch manifest — with AI-assisted triage, warehouse matching, and delivery verification throughout. Built with **Laravel 12**, fully **bilingual (Arabic/English)** with automatic RTL/LTR switching, and a public GPS map plus a no-login shipment tracker.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 1. How it works
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Every field request moves through a clear state machine on the `aid_requests` table:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```
+pending  →  dispatched  →  delivered
+    ↓
+ rejected (a depot manager or admin can decline a request that can't be fulfilled)
+```
 
-## Learning Laravel
+1. A **field coordinator** submits an aid request: a target distribution location (optionally pinned on a map), notes, and one or more relief items with quantities. An AI pass reads the location and notes and tags the request `normal` / `high` / `critical` priority for triage — advisory only, it never blocks submission.
+2. A **depot manager** (or admin) opens the request and sees every active warehouse **ranked by distance and by whether it currently holds enough stock for every requested item**. They dispatch straight from the best match, or reject the request with a reason if nothing can fulfill it. Dispatch re-checks stock for every item before committing; if anything is short, nothing is deducted and the exact shortfall is shown.
+3. On a successful dispatch, stock is deducted from that warehouse, a **shipment** record is created with a unique QR tracking token, and a printable manifest becomes available — plus a public, no-login tracking page anyone can reach by scanning the QR code.
+4. The coordinator confirms receipt in the field once the goods arrive, optionally attaching a delivery photo. If attached, an AI pass does a quick plausibility check against the manifest and flags the delivery **AI Verified** or **Needs Review** (advisory, not a hard gate) — closing out both the shipment and the aid request as **delivered**.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+---
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 2. Roles
 
-## Laravel Sponsors
+| Role | Value | How the account is created | Starting status |
+|---|---|---|---|
+| Administrator | `admin` | **Only** via `php artisan app:create-admin` — no public signup | `active` |
+| Depot Manager | `depot_manager` | Public registration | `pending_verification` (needs admin approval) |
+| Field Coordinator | `coordinator` | Public registration | `pending_verification` (needs admin approval) |
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Account status: `pending_verification` / `active` / `suspended`. A pending or suspended user is redirected to an explanatory waiting page instead of the dashboard.
 
-### Premium Partners
+**Admin:** manages warehouses and relief items, approves/suspends accounts, and can also reject/dispatch requests and confirm deliveries — full visibility across the platform, plus the AI impact report.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+**Depot Manager:** manages warehouse stock levels, reviews pending aid requests using AI-ranked warehouse matches, dispatches or rejects them, and tracks shipments already on the road.
 
-## Contributing
+**Field Coordinator:** submits aid requests with any number of relief items, tracks their own requests, and confirms delivery once a shipment reaches them.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## 3. AI features
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+All four run through a single `AIService`, wired to OpenAI's API. **Every one has a safe simulation-mode fallback** when `OPENAI_API_KEY` is left blank in `.env` — the app runs and demos fully with zero external calls and zero cost; connecting a key only makes the results smarter, nothing depends on it being present.
 
-## Security Vulnerabilities
+- **Priority triage** — every new aid request is classified `normal` / `high` / `critical` from its notes and location. Simulation mode uses a keyword heuristic (urgent, emergency, injured, medical, children...).
+- **Smart warehouse matching** — `LogisticsService` ranks every active warehouse for a pending request by real Haversine distance and by whether it can fully cover every requested item, so the depot manager dispatches from the best option in one click instead of guessing.
+- **Delivery photo verification** — an optional photo attached at delivery is checked against the shipment's manifest and flagged `AI Verified` or `Needs Review`. Simulation mode always returns `Needs Review` with a note to check manually — it never fabricates a "verified" result without a real model behind it.
+- **Humanitarian impact report** — an AI-written 3–4 sentence narrative summary built strictly from real platform statistics (deliveries, active shipments, pending/rejected counts, categories distributed), available to admins and depot managers, printable.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 4. Bilingual support
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen/landing page at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
+
+---
+
+## 5. Pages
+
+Public (no login): landing page, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
+
+Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, admin-managed), Relief Items (admin-managed), Inventory overview, Aid Requests (list + detail with timeline and AI-ranked dispatch), Shipments (detail with delivery confirmation + AI verification), Map (all warehouses and open requests plotted together), Impact Report (admin/depot manager), Accounts (admin), Profile, Help (role-aware FAQ).
+
+---
+
+## 6. Tech stack
+
+| Layer | Technology |
+|---|---|
+| Backend | PHP 8.2+, Laravel 12 |
+| Auth | Session-based, hand-rolled registration + approval flow (no third-party auth package) |
+| Database | SQLite for local development (swap via `.env` for MySQL/PostgreSQL in production) |
+| Frontend | Blade + Alpine.js + Tailwind CSS v4 |
+| Maps | Leaflet.js + OpenStreetMap tiles (no API key required) |
+| AI | OpenAI Chat Completions API via `AIService`, simulation mode when no key is set |
+| Build | Vite |
+| QR codes | `bacon/bacon-qr-code` — generated locally as inline SVG, no external API call |
+| Tests | PHPUnit (Feature tests) |
+
+---
+
+## 7. Local setup
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+
+touch database/database.sqlite
+php artisan migrate
+php artisan storage:link
+
+npm install
+npm run build   # or: npm run dev
+
+php artisan serve
+```
+
+### Create the administrator account
+
+There is no public signup for admins — create the first (and any further) admin from the terminal:
+
+```bash
+php artisan app:create-admin
+```
+
+### Enabling real AI responses (optional)
+
+Set `OPENAI_API_KEY` in `.env`. Without it every AI feature above still works end-to-end in simulation mode.
+
+### Demo data
+
+`php artisan db:seed` creates a depot manager and a field coordinator (`manager@reliefflow.com` / `coordinator@reliefflow.com`, password `password`), three sample warehouses with real GPS coordinates, four relief items, some starting stock, and one sample critical-priority aid request — useful for trying the full flow, including the map and smart matching, immediately after `app:create-admin`.
+
+---
+
+## 8. Tests
+
+```bash
+php artisan test
+```
+
+Feature tests cover: registration and admin approval (including that pending/suspended accounts can't reach the dashboard and nobody can self-register as admin), the full aid-request lifecycle (multi-item requests, AI priority tagging, dispatch with stock deduction, insufficient-stock rejection, request rejection, delivery confirmation and who's allowed to confirm it), admin-only warehouse/item/inventory management (including that a warehouse with shipment history or an item with stock can't be deleted), the public tracking page (and that it never leaks driver phone numbers), profile/password updates, and the AI/logistics services directly (priority classification, warehouse ranking by distance and stock, delivery photo verification) in simulation mode.
+
+---
+
+## 9. Project structure
+
+```
+app/
+  Http/Controllers/
+    AuthController.php            # Login / logout
+    Auth/RegisteredUserController.php
+    AdminController.php           # Accounts page, approve / suspend
+    DashboardController.php       # Per-role dashboard data
+    WarehouseController.php       # index/show + admin-only CRUD
+    ItemController.php            # index + admin-only CRUD
+    InventoryController.php       # Stock overview + add stock
+    AidRequestController.php      # index/create/show/store/reject/dispatch
+    ShipmentController.php        # show/deliver/print + public track()
+    ProfileController.php
+    ReportController.php          # AI impact report
+    MapController.php             # GPS overview
+  Policies/
+    AidRequestPolicy.php          # create / view / reject / dispatch / confirmDelivery
+    ShipmentPolicy.php            # view / deliver
+  Http/Middleware/
+    EnsureUserIsAdmin.php
+    EnsureUserIsActive.php        # Gates the dashboard for pending/suspended accounts
+    SetLocale.php
+  Services/
+    AIService.php                 # OpenAI integration + simulation-mode fallback
+    LogisticsService.php          # Haversine distance + warehouse stock ranking
+    QrCodeService.php             # Local SVG QR generation
+  Console/Commands/CreateAdminUser.php
+
+resources/views/
+  welcome.blade.php               # Public landing page
+  tracking/show.blade.php         # Public QR shipment tracker
+  dashboards/                     # admin.blade.php, depot-manager.blade.php, coordinator.blade.php
+  warehouses/, items/, inventory/, aid-requests/, shipments/, admin/, profile/, reports/, map/
+  components/location-picker.blade.php  # Reusable Leaflet map picker
+  layouts/app.blade.php           # Sidebar shell for authenticated pages
+  layouts/guest.blade.php         # Auth pages shell
+
+lang/ar.json                      # Arabic translations (English is the fallback/default)
+tests/Feature/                    # Registration/approval, aid-request lifecycle, admin resource
+                                   # management, public pages, AI/logistics services, profile
+```
+
+---
+
+## 10. Visual identity
+
+A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages.
+
+---
+
+## 11. Privacy note on the public tracking page
+
+`/track/{token}` is reachable by anyone with the QR code — no login. It intentionally shows only what a recipient needs to verify a shipment (status, manifest contents, driver name, origin warehouse name, destination) and **omits** the driver's phone number and precise warehouse GPS coordinates, since this page is public by design and the platform may be used in sensitive contexts.
+
+---
+
+## 12. Before a production deploy
+
+- Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, a freshly generated `APP_KEY`.
+- A real database engine (MySQL/PostgreSQL) instead of SQLite.
+- A real mail driver if email notifications are added later (none are wired up yet — approvals and dispatches currently only show as in-app flash messages).
+- An `OPENAI_API_KEY` if real AI responses are wanted instead of simulation mode.
+- `php artisan storage:link` on the server (for delivery photos) and `php artisan config:cache` / `route:cache` for performance.

@@ -1,0 +1,52 @@
+<x-app-layout>
+    <div class="space-y-6 max-w-3xl">
+        <div class="flex items-center justify-between">
+            <h1 class="text-xl font-bold text-ink-900">{{ __('Humanitarian Impact Report') }}</h1>
+            <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold">{{ __('Print / Save as PDF') }}</button>
+        </div>
+
+        <div class="bg-white border border-ink-100 rounded-2xl p-6 space-y-2">
+            <p class="text-[10px] font-bold text-field-600 uppercase tracking-wide">{{ __('AI-generated summary') }}</p>
+            <p class="text-sm text-ink-800 leading-relaxed">{{ $narrative }}</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Delivered') }}</p>
+                <p class="text-2xl font-extrabold text-field-600 mt-1">{{ number_format($stats['delivered_count']) }}</p>
+            </div>
+            <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('In Transit') }}</p>
+                <p class="text-2xl font-extrabold text-sky-600 mt-1">{{ number_format($stats['active_count']) }}</p>
+            </div>
+            <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Pending') }}</p>
+                <p class="text-2xl font-extrabold text-amber-alert-600 mt-1">{{ number_format($stats['pending_count']) }}</p>
+            </div>
+            <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Rejected') }}</p>
+                <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ number_format($stats['rejected_count']) }}</p>
+            </div>
+        </div>
+
+        @if($topCategories->isNotEmpty())
+            <div class="bg-white border border-ink-100 rounded-2xl p-6">
+                <p class="text-xs font-bold text-ink-700 mb-3">{{ __('Items delivered by category') }}</p>
+                <div class="space-y-2">
+                    @php $max = $topCategories->max(); @endphp
+                    @foreach($topCategories as $category => $quantity)
+                        <div>
+                            <div class="flex items-center justify-between text-[11px] font-semibold text-ink-600 mb-1">
+                                <span>{{ $category }}</span>
+                                <span>{{ number_format($quantity) }}</span>
+                            </div>
+                            <div class="h-2 bg-ink-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-field-500" style="width: {{ $max > 0 ? round($quantity / $max * 100) : 0 }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+    </div>
+</x-app-layout>
