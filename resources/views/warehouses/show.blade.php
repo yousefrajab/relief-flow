@@ -91,7 +91,7 @@
 
     @if(auth()->user()->role === 'admin')
         <x-modal name="edit-warehouse" :title="__('Edit Warehouse')">
-            <form method="POST" action="{{ route('warehouses.update', $warehouse) }}" class="space-y-4">
+            <form method="POST" action="{{ route('warehouses.update', $warehouse) }}" class="space-y-4" x-data="{ location: @js($warehouse->location) }" x-on:location-picked.window="location = $event.detail">
                 @csrf @method('PUT')
                 <div>
                     <x-input-label :value="__('Name')" />
@@ -99,7 +99,7 @@
                 </div>
                 <div>
                     <x-input-label :value="__('Location description')" />
-                    <x-text-input name="location" value="{{ $warehouse->location }}" required />
+                    <x-text-input name="location" x-model="location" required />
                 </div>
                 <div>
                     <x-input-label :value="__('Map location')" />
