@@ -1,33 +1,39 @@
 <x-app-layout>
-    <div class="space-y-6 max-w-2xl">
+    <div class="space-y-6 max-w-5xl">
         <div>
             <a href="{{ route('aid-requests.index') }}" class="text-[11px] font-bold text-ink-400 hover:text-ink-700">&larr; {{ __('Aid Requests') }}</a>
             <h1 class="text-xl font-bold text-ink-900 mt-1">{{ __('New Aid Request') }}</h1>
         </div>
 
-        <div class="bg-white border border-ink-100 rounded-2xl p-6"
-             x-data="{ rows: [{ item_id: '', quantity: 1 }] }">
-            <form method="POST" action="{{ route('aid-requests.store') }}" class="space-y-4">
+        <div class="bg-white border border-ink-100 rounded-2xl p-6 sm:p-8"
+             x-data="{ rows: [{ item_id: '', quantity: 1 }], location: @js(old('location', '')) }"
+             x-on:location-picked.window="location = $event.detail">
+            <form method="POST" action="{{ route('aid-requests.store') }}" class="space-y-6">
                 @csrf
 
-                <div>
-                    <x-input-label :value="__('Target distribution location')" />
-                    <x-text-input name="location" required />
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="space-y-4">
+                        <div>
+                            <x-input-label :value="__('Target distribution location')" />
+                            <x-text-input name="location" x-model="location" required />
+                            <x-input-error :messages="$errors->get('location')" />
+                        </div>
+
+                        <div>
+                            <x-input-label :value="__('Notes (optional)')" />
+                            <textarea name="notes" rows="5" class="block w-full rounded-xl border-ink-200 text-sm focus:border-field-500 focus:ring-field-500">{{ old('notes') }}</textarea>
+                            <p class="text-[10px] text-ink-400 mt-1">{{ __('These notes help our AI triage the urgency of the request.') }}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <x-input-label :value="__('Map location (optional)')" />
+                        <x-location-picker />
+                    </div>
                 </div>
 
-                <div>
-                    <x-input-label :value="__('Map location (optional)')" />
-                    <x-location-picker />
-                </div>
-
-                <div>
-                    <x-input-label :value="__('Notes (optional)')" />
-                    <textarea name="notes" rows="2" class="block w-full rounded-xl border-ink-200 text-sm focus:border-field-500 focus:ring-field-500"></textarea>
-                    <p class="text-[10px] text-ink-400 mt-1">{{ __('These notes help our AI triage the urgency of the request.') }}</p>
-                </div>
-
-                <div class="space-y-3">
-                    <x-input-label :value="__('Requested items')" />
+                <div class="space-y-3 pt-2 border-t border-ink-100">
+                    <x-input-label :value="__('Requested items')" class="!mb-0 pt-4" />
                     <template x-for="(row, index) in rows" :key="index">
                         <div class="flex gap-2 items-start">
                             <select :name="`items[${index}][item_id]`" x-model="row.item_id" required class="flex-grow rounded-xl border-ink-200 text-sm focus:border-field-500 focus:ring-field-500">
@@ -45,7 +51,7 @@
                     <button type="button" x-on:click="rows.push({ item_id: '', quantity: 1 })" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-field-600 hover:text-field-700"><x-icon name="plus" class="w-3.5 h-3.5" /> {{ __('Add another item') }}</button>
                 </div>
 
-                <x-primary-button class="w-full justify-center">{{ __('Submit Request') }}</x-primary-button>
+                <x-primary-button class="w-full justify-center py-3">{{ __('Submit Request') }}</x-primary-button>
             </form>
         </div>
     </div>
