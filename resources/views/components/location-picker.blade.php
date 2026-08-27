@@ -31,13 +31,10 @@
         async reverseGeocode(lat, lng) {
             this.geocoding = true;
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&accept-language={{ app()->getLocale() }}`);
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language={{ app()->getLocale() }}`);
                 const data = await response.json();
-                const a = data.address || {};
-                const parts = [a.neighbourhood || a.suburb || a.quarter || a.village, a.city || a.town || a.county].filter(Boolean);
-                const address = parts.length ? parts.join(', ') : data.display_name;
-                if (address) {
-                    this.$dispatch('location-picked', address);
+                if (data.display_name) {
+                    this.$dispatch('location-picked', data.display_name);
                 }
             } catch (e) {
                 // Geocoding is a convenience only — the lat/lng fields below remain authoritative either way.
