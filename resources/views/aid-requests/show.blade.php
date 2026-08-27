@@ -3,9 +3,12 @@
         <div>
             <a href="{{ route('aid-requests.index') }}" class="text-[11px] font-bold text-ink-400 hover:text-ink-700">&larr; {{ __('Aid Requests') }}</a>
             <div class="flex flex-wrap items-start justify-between gap-3 mt-1">
-                <div>
-                    <h1 class="text-xl font-bold text-ink-900">{{ $aidRequest->location }}</h1>
-                    <p class="text-xs text-ink-500 mt-0.5">{{ __('Requested by') }} {{ $aidRequest->user->name }} · {{ $aidRequest->created_at->diffForHumans() }}</p>
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-field-50 text-field-600 flex items-center justify-center shrink-0"><x-icon name="clipboard" class="w-5 h-5" /></div>
+                    <div>
+                        <h1 class="text-xl font-bold text-ink-900">{{ $aidRequest->location }}</h1>
+                        <p class="text-xs text-ink-500 mt-0.5">{{ __('Requested by') }} {{ $aidRequest->user->name }} · {{ $aidRequest->created_at->diffForHumans() }}</p>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     @if($aidRequest->priority === 'critical')
@@ -76,7 +79,10 @@
         </div>
 
         <section class="space-y-3">
-            <h2 class="text-sm font-bold text-ink-900">{{ __('Activity Log') }}</h2>
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-field-50 text-field-600 flex items-center justify-center"><x-icon name="clipboard" class="w-4 h-4" /></div>
+                <h2 class="text-sm font-bold text-ink-900">{{ __('Activity Log') }}</h2>
+            </div>
             <div class="bg-white border border-ink-100 rounded-2xl divide-y divide-ink-50">
                 @forelse($aidRequest->activities as $activity)
                     <div class="p-4 flex items-start justify-between gap-3">
@@ -105,7 +111,10 @@
 
         @can('reject', $aidRequest)
             <section class="space-y-3">
-                <h2 class="text-sm font-bold text-ink-900">{{ __('Dispatch this request') }}</h2>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center"><x-icon name="route" class="w-4 h-4" /></div>
+                    <h2 class="text-sm font-bold text-ink-900">{{ __('Dispatch this request') }}</h2>
+                </div>
                 <p class="text-[11px] text-ink-500">{{ __('Warehouses ranked by distance and whether they currently hold enough stock for every item in this request.') }}</p>
 
                 <div class="space-y-2">

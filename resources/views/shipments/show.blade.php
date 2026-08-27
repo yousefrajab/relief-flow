@@ -3,9 +3,12 @@
         <div>
             <a href="{{ route('aid-requests.show', $shipment->aidRequest) }}" class="text-[11px] font-bold text-ink-400 hover:text-ink-700">&larr; {{ __('Aid Request') }}</a>
             <div class="flex flex-wrap items-start justify-between gap-3 mt-1">
-                <div>
-                    <h1 class="text-xl font-bold text-ink-900">{{ $shipment->qr_code_token }}</h1>
-                    <p class="text-xs text-ink-500 mt-0.5">{{ __('To') }} {{ $shipment->aidRequest->location }}</p>
+                <div class="flex items-start gap-3">
+                    <div class="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center shrink-0"><x-icon name="truck" class="w-5 h-5" /></div>
+                    <div>
+                        <h1 class="text-xl font-bold text-ink-900">{{ $shipment->qr_code_token }}</h1>
+                        <p class="text-xs text-ink-500 mt-0.5">{{ __('To') }} {{ $shipment->aidRequest->location }}</p>
+                    </div>
                 </div>
                 <x-status-badge :status="$shipment->status" />
             </div>
@@ -34,7 +37,7 @@
                 </div>
             </div>
 
-            <a href="{{ route('shipments.print', $shipment) }}" target="_blank" class="inline-block text-[11px] font-bold text-field-600 hover:text-field-700">{{ __('Print Manifest') }} &rarr;</a>
+            <a href="{{ route('shipments.print', $shipment) }}" target="_blank" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-field-600 hover:text-field-700"><x-icon name="qr" class="w-3.5 h-3.5" /> {{ __('Print Manifest') }} &rarr;</a>
         </div>
 
         @if($shipment->status === 'delivered')
@@ -56,7 +59,10 @@
             </div>
         @elseif(auth()->user()->can('deliver', $shipment))
             <div class="bg-white border border-ink-100 rounded-2xl p-6 space-y-4">
-                <h2 class="text-sm font-bold text-ink-900">{{ __('Confirm Delivery') }}</h2>
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-field-50 text-field-600 flex items-center justify-center"><x-icon name="camera" class="w-4 h-4" /></div>
+                    <h2 class="text-sm font-bold text-ink-900">{{ __('Confirm Delivery') }}</h2>
+                </div>
                 <p class="text-[11px] text-ink-500">{{ __('Optionally attach a photo of the received goods — our AI will do a quick plausibility check against the manifest.') }}</p>
                 <form method="POST" action="{{ route('shipments.deliver', $shipment) }}" enctype="multipart/form-data" class="space-y-4">
                     @csrf

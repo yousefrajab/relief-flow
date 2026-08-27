@@ -42,7 +42,7 @@
                             </button>
                         </div>
                     </template>
-                    <button type="button" x-on:click="rows.push({ item_id: '', quantity: 1 })" class="text-[11px] font-bold text-field-600 hover:text-field-700">+ {{ __('Add another item') }}</button>
+                    <button type="button" x-on:click="rows.push({ item_id: '', quantity: 1 })" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-field-600 hover:text-field-700"><x-icon name="plus" class="w-3.5 h-3.5" /> {{ __('Add another item') }}</button>
                 </div>
 
                 <x-primary-button class="w-full justify-center">{{ __('Submit Request') }}</x-primary-button>

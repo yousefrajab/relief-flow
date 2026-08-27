@@ -2,7 +2,27 @@
     <div class="space-y-6 max-w-xl">
         <h1 class="text-xl font-bold text-ink-900">{{ __('Profile') }}</h1>
 
+        <div class="bg-gradient-to-br from-field-600 to-field-800 rounded-3xl p-6 flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-white font-extrabold text-2xl shrink-0">
+                {{ mb_strtoupper(mb_substr($user->name, 0, 1)) }}
+            </div>
+            <div>
+                <p class="text-base font-bold text-white">{{ $user->name }}</p>
+                <p class="text-xs text-field-100 mt-0.5">
+                    {{ match($user->role) {
+                        'admin' => __('Administrator'),
+                        'depot_manager' => __('Depot Manager'),
+                        default => __('Field Coordinator'),
+                    } }} · {{ $user->email }}
+                </p>
+            </div>
+        </div>
+
         <div class="bg-white border border-ink-100 rounded-2xl p-6">
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-field-50 text-field-600 flex items-center justify-center"><x-icon name="user" class="w-4 h-4" /></div>
+                <h2 class="text-sm font-bold text-ink-900">{{ __('Account details') }}</h2>
+            </div>
             <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
                 @csrf @method('PUT')
                 <div>
@@ -25,7 +45,10 @@
         </div>
 
         <div class="bg-white border border-ink-100 rounded-2xl p-6">
-            <h2 class="text-sm font-bold text-ink-900 mb-4">{{ __('Change Password') }}</h2>
+            <div class="flex items-center gap-2 mb-4">
+                <div class="w-8 h-8 rounded-lg bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center"><x-icon name="shield-check" class="w-4 h-4" /></div>
+                <h2 class="text-sm font-bold text-ink-900">{{ __('Change Password') }}</h2>
+            </div>
             <form method="POST" action="{{ route('profile.password.update') }}" class="space-y-4">
                 @csrf @method('PUT')
                 <div>
