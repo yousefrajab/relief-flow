@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\AidRequest;
+use App\Models\AidRequestItem;
 use App\Models\Inventory;
 use App\Models\Item;
 use App\Models\User;
@@ -39,6 +41,8 @@ class DatabaseSeeder extends Seeder
         $central = Warehouse::create([
             'name' => 'Central Gaza Depot',
             'location' => 'Deir El-Balah, Salah Al-Din Road',
+            'latitude' => 31.4165,
+            'longitude' => 34.3510,
             'capacity' => 10000,
             'status' => 'active',
         ]);
@@ -46,6 +50,8 @@ class DatabaseSeeder extends Seeder
         $south = Warehouse::create([
             'name' => 'South Gaza Facility',
             'location' => 'Rafah, Al-Salam Neighborhood',
+            'latitude' => 31.2980,
+            'longitude' => 34.2417,
             'capacity' => 15000,
             'status' => 'active',
         ]);
@@ -53,6 +59,8 @@ class DatabaseSeeder extends Seeder
         Warehouse::create([
             'name' => 'North Gaza Hub',
             'location' => 'Jabalia Al-Balad',
+            'latitude' => 31.5280,
+            'longitude' => 34.4830,
             'capacity' => 5000,
             'status' => 'inactive',
         ]);
@@ -92,5 +100,23 @@ class DatabaseSeeder extends Seeder
         Inventory::create(['warehouse_id' => $central->id, 'item_id' => $foodParcel->id, 'quantity' => 4200]);
         Inventory::create(['warehouse_id' => $central->id, 'item_id' => $hygieneKit->id, 'quantity' => 850]);
         Inventory::create(['warehouse_id' => $south->id, 'item_id' => $foodParcel->id, 'quantity' => 1600]);
+
+        AidRequest::query()->delete();
+
+        $sampleRequest = AidRequest::create([
+            'user_id' => $coordinator->id,
+            'location' => 'Khan Younis Distribution Point',
+            'latitude' => 31.3469,
+            'longitude' => 34.3029,
+            'notes' => 'Urgent — families with children waiting since morning.',
+            'status' => 'pending',
+            'priority' => 'critical',
+        ]);
+
+        AidRequestItem::create([
+            'aid_request_id' => $sampleRequest->id,
+            'item_id' => $foodParcel->id,
+            'quantity' => 150,
+        ]);
     }
 }

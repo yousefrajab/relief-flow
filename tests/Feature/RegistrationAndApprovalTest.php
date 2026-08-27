@@ -60,7 +60,7 @@ class RegistrationAndApprovalTest extends TestCase
 
         $response = $this->actingAs($admin)->post("/users/{$pending->id}/approve");
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('admin.users'));
         $this->assertSame('active', $pending->fresh()->status);
     }
 

@@ -29,13 +29,13 @@ class AidRequestLifecycleTest extends TestCase
             ],
         ]);
 
-        $response->assertRedirect(route('dashboard'));
         $this->assertDatabaseHas('aid_requests', [
             'user_id' => $coordinator->id,
             'location' => 'Deir El-Balah Distribution Point',
             'status' => 'pending',
         ]);
         $aidRequest = AidRequest::first();
+        $response->assertRedirect(route('aid-requests.show', $aidRequest));
         $this->assertCount(2, $aidRequest->requestItems);
     }
 
@@ -69,7 +69,7 @@ class AidRequestLifecycleTest extends TestCase
             'driver_phone' => '0599999999',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('aid-requests.show', $aidRequest));
         $this->assertSame('dispatched', $aidRequest->fresh()->status);
         $this->assertSame(380, Inventory::where('warehouse_id', $warehouse->id)->where('item_id', $item->id)->first()->quantity);
         $this->assertDatabaseHas('shipments', [
@@ -110,7 +110,7 @@ class AidRequestLifecycleTest extends TestCase
             'rejection_reason' => 'No matching stock available.',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('aid-requests.show', $aidRequest));
         $aidRequest->refresh();
         $this->assertSame('rejected', $aidRequest->status);
         $this->assertSame('No matching stock available.', $aidRequest->rejection_reason);
@@ -137,7 +137,7 @@ class AidRequestLifecycleTest extends TestCase
 
         $response = $this->actingAs($coordinator)->post("/shipments/{$shipment->id}/deliver");
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('shipments.show', $shipment));
         $this->assertSame('delivered', $shipment->fresh()->status);
         $this->assertSame('delivered', $aidRequest->fresh()->status);
         $this->assertNotNull($shipment->fresh()->delivered_at);
@@ -165,7 +165,7 @@ class AidRequestLifecycleTest extends TestCase
 
         $response = $this->actingAs($admin)->post("/shipments/{$shipment->id}/deliver");
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('shipments.show', $shipment));
         $this->assertSame('delivered', $shipment->fresh()->status);
     }
 }

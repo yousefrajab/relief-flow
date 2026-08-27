@@ -26,65 +26,46 @@ class DashboardController extends Controller
 
     private function adminDashboard(): View
     {
-        $warehouses = Warehouse::withCount('inventories')->orderBy('id', 'desc')->get();
-        $items = Item::orderBy('id', 'desc')->get();
-        $pendingUsers = User::where('status', 'pending_verification')->orderBy('created_at')->get();
-        $allUsers = User::where('role', '!=', 'admin')->orderBy('name')->get();
-        $aidRequests = AidRequest::with(['requestItems.item', 'user'])->orderBy('id', 'desc')->get();
-        $lowStockAlerts = Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->get();
-
         return view('dashboards.admin', [
-            'warehouses' => $warehouses,
-            'items' => $items,
-            'pendingUsers' => $pendingUsers,
-            'allUsers' => $allUsers,
-            'aidRequests' => $aidRequests,
-            'lowStockAlerts' => $lowStockAlerts,
-            'totalWarehouses' => $warehouses->count(),
-            'totalItems' => $items->count(),
-            'pendingRequests' => $aidRequests->where('status', 'pending')->count(),
+            'totalWarehouses' => Warehouse::count(),
+            'totalItems' => Item::count(),
+            'pendingRequests' => AidRequest::where('status', 'pending')->count(),
             'activeShipments' => Shipment::where('status', 'dispatched')->count(),
+            'pendingUsersCount' => User::where('status', 'pending_verification')->count(),
+            'lowStockAlerts' => Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->limit(6)->get(),
+            'recentRequests' => AidRequest::with(['requestItems.item', 'user'])->orderBy('id', 'desc')->limit(5)->get(),
         ]);
     }
 
     private function depotManagerDashboard(): View
     {
-        $warehouses = Warehouse::orderBy('id', 'desc')->get();
-        $items = Item::orderBy('id', 'desc')->get();
-        $inventories = Inventory::with(['warehouse', 'item'])->orderBy('id', 'desc')->get();
-        $pendingRequests = AidRequest::with(['requestItems.item', 'user'])
-            ->where('status', 'pending')
-            ->orderBy('id', 'desc')
-            ->get();
-        $dispatchedShipments = Shipment::with(['aidRequest', 'warehouse'])
-            ->where('status', 'dispatched')
-            ->orderBy('id', 'desc')
-            ->get();
-        $lowStockAlerts = Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->get();
-
-        return view('dashboards.depot-manager', compact(
-            'warehouses',
-            'items',
-            'inventories',
-            'pendingRequests',
-            'dispatchedShipments',
-            'lowStockAlerts'
-        ));
+        return view('dashboards.depot-manager', [
+            'pendingRequestsCount' => AidRequest::where('status', 'pending')->count(),
+            'dispatchedCount' => Shipment::where('status', 'dispatched')->count(),
+            'lowStockAlerts' => Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->limit(6)->get(),
+            'pendingRequests' => AidRequest::with(['requestItems.item', 'user'])
+                ->where('status', 'pending')
+                ->orderBy('id', 'desc')
+                ->limit(5)
+                ->get(),
+        ]);
     }
 
     private function coordinatorDashboard(User $user): View
     {
-        $items = Item::orderBy('name')->get();
-        $myRequests = AidRequest::with(['requestItems.item', 'shipment'])
-            ->where('user_id', $user->id)
-            ->orderBy('id', 'desc')
-            ->get();
-        $myShipmentsAwaitingDelivery = Shipment::with(['aidRequest', 'warehouse'])
-            ->whereHas('aidRequest', fn ($query) => $query->where('user_id', $user->id))
-            ->where('status', 'dispatched')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        return view('dashboards.coordinator', compact('items', 'myRequests', 'myShipmentsAwaitingDelivery'));
+        return view('dashboards.coordinator', [
+            'myRequestsCount' => AidRequest::where('user_id', $user->id)->count(),
+            'myPendingCount' => AidRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'myShipmentsAwaitingDelivery' => Shipment::with(['aidRequest', 'warehouse'])
+                ->whereHas('aidRequest', fn ($query) => $query->where('user_id', $user->id))
+                ->where('status', 'dispatched')
+                ->orderBy('id', 'desc')
+                ->get(),
+            'recentRequests' => AidRequest::with(['requestItems.item', 'shipment'])
+                ->where('user_id', $user->id)
+                ->orderBy('id', 'desc')
+                ->limit(5)
+                ->get(),
+        ]);
     }
 }

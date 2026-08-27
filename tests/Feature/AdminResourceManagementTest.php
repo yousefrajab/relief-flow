@@ -24,7 +24,7 @@ class AdminResourceManagementTest extends TestCase
             'capacity' => 5000,
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('warehouses.show', Warehouse::where('name', 'North Depot')->firstOrFail()));
         $this->assertDatabaseHas('warehouses', ['name' => 'North Depot']);
     }
 
@@ -50,7 +50,7 @@ class AdminResourceManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->delete("/warehouses/{$warehouse->id}");
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('warehouses.show', $warehouse));
         $response->assertSessionHas('error');
         $this->assertModelExists($warehouse);
     }
@@ -62,7 +62,7 @@ class AdminResourceManagementTest extends TestCase
 
         $response = $this->actingAs($admin)->delete("/warehouses/{$warehouse->id}");
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('warehouses.index'));
         $this->assertModelMissing($warehouse);
     }
 
@@ -76,7 +76,7 @@ class AdminResourceManagementTest extends TestCase
             'unit' => 'pack',
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('items.index'));
         $this->assertDatabaseHas('items', ['name' => 'Blanket Pack']);
     }
 
@@ -104,7 +104,7 @@ class AdminResourceManagementTest extends TestCase
             'quantity' => 200,
         ]);
 
-        $response->assertRedirect(route('dashboard'));
+        $response->assertRedirect(route('inventory.index'));
         $this->assertDatabaseHas('inventories', [
             'warehouse_id' => $warehouse->id,
             'item_id' => $item->id,

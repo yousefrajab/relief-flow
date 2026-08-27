@@ -18,8 +18,11 @@ class AidRequestFactory extends Factory
         return [
             'user_id' => User::factory()->coordinator(),
             'location' => fake()->address(),
+            'latitude' => fake()->latitude(31, 31.6),
+            'longitude' => fake()->longitude(34.2, 34.5),
             'notes' => fake()->sentence(),
             'status' => 'pending',
+            'priority' => 'normal',
         ];
     }
 

@@ -12,8 +12,11 @@ class AidRequest extends Model
     protected $fillable = [
         'user_id',
         'location',
+        'latitude',
+        'longitude',
         'notes',
         'status',
+        'priority',
         'rejection_reason',
     ];
 

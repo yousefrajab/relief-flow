@@ -17,6 +17,9 @@ class Shipment extends Model
         'status',
         'qr_code_token',
         'delivered_at',
+        'delivery_photo_path',
+        'ai_verification_status',
+        'ai_verification_notes',
     ];
 
     protected $casts = [

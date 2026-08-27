@@ -3,11 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventory;
+use App\Models\Item;
+use App\Models\Warehouse;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
+    public function index(): View
+    {
+        $inventories = Inventory::with(['warehouse', 'item'])->orderBy('quantity')->get();
+        $warehouses = Warehouse::where('status', 'active')->orderBy('name')->get();
+        $items = Item::orderBy('name')->get();
+
+        return view('inventory.index', compact('inventories', 'warehouses', 'items'));
+    }
+
     public function store(Request $request): RedirectResponse
     {
         abort_unless(in_array($request->user()->role, ['admin', 'depot_manager']), 403);
@@ -26,6 +38,6 @@ class InventoryController extends Controller
         $inventory->quantity = ($inventory->quantity ?? 0) + $request->quantity;
         $inventory->save();
 
-        return redirect()->route('dashboard')->with('success', __('Inventory stock has been updated successfully.'));
+        return redirect()->route('inventory.index')->with('success', __('Inventory stock has been updated successfully.'));
     }
 }

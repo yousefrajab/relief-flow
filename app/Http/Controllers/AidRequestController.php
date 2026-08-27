@@ -5,8 +5,12 @@ namespace App\Http\Controllers;
 use App\Models\AidRequest;
 use App\Models\AidRequestItem;
 use App\Models\Inventory;
+use App\Models\Item;
 use App\Models\Shipment;
 use App\Models\Warehouse;
+use App\Services\AIService;
+use App\Services\LogisticsService;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,24 +18,55 @@ use Illuminate\Support\Facades\DB;
 
 class AidRequestController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function index(): View
+    {
+        $user = Auth::user();
+
+        $query = AidRequest::with(['requestItems.item', 'user', 'shipment']);
+
+        if ($user->role === 'coordinator') {
+            $query->where('user_id', $user->id);
+        }
+
+        $aidRequests = $query->orderBy('id', 'desc')->paginate(15);
+
+        return view('aid-requests.index', compact('aidRequests'));
+    }
+
+    public function create(): View
+    {
+        $this->authorize('create', AidRequest::class);
+
+        $items = Item::orderBy('name')->get();
+
+        return view('aid-requests.create', compact('items'));
+    }
+
+    public function store(Request $request, AIService $aiService): RedirectResponse
     {
         $this->authorize('create', AidRequest::class);
 
         $request->validate([
             'location' => ['required', 'string', 'min:5', 'max:255'],
+            'latitude' => ['nullable', 'numeric'],
+            'longitude' => ['nullable', 'numeric'],
             'notes' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_id' => ['required', 'exists:items,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
         ]);
 
-        DB::transaction(function () use ($request) {
+        $priority = $aiService->classifyPriority($request->location, $request->notes);
+
+        $aidRequest = DB::transaction(function () use ($request, $priority) {
             $aidRequest = AidRequest::create([
                 'user_id' => Auth::id(),
                 'location' => $request->location,
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
                 'notes' => $request->notes,
                 'status' => 'pending',
+                'priority' => $priority,
             ]);
 
             foreach ($request->items as $item) {
@@ -41,9 +76,25 @@ class AidRequestController extends Controller
                     'quantity' => $item['quantity'],
                 ]);
             }
+
+            return $aidRequest;
         });
 
-        return redirect()->route('dashboard')->with('success', __('Field aid request has been submitted and is pending review.'));
+        return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Field aid request has been submitted and is pending review.'));
+    }
+
+    public function show(AidRequest $aidRequest, LogisticsService $logisticsService): View
+    {
+        $this->authorize('view', $aidRequest);
+
+        $aidRequest->load(['requestItems.item', 'user', 'shipment.warehouse']);
+
+        $matches = null;
+        if ($aidRequest->status === 'pending') {
+            $matches = $logisticsService->rankWarehousesFor($aidRequest);
+        }
+
+        return view('aid-requests.show', compact('aidRequest', 'matches'));
     }
 
     public function reject(Request $request, AidRequest $aidRequest): RedirectResponse
@@ -59,7 +110,7 @@ class AidRequestController extends Controller
             'rejection_reason' => $request->rejection_reason,
         ]);
 
-        return redirect()->route('dashboard')->with('success', __('Aid request has been rejected.'));
+        return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Aid request has been rejected.'));
     }
 
     public function dispatch(Request $request, AidRequest $aidRequest): RedirectResponse
@@ -83,7 +134,7 @@ class AidRequestController extends Controller
             if (! $inventory || $inventory->quantity < $requestItem->quantity) {
                 $available = $inventory?->quantity ?? 0;
 
-                return redirect()->route('dashboard')->withErrors([
+                return back()->withErrors([
                     'warehouse_id' => __('Insufficient stock in :warehouse for :item (requested :requested, available :available).', [
                         'warehouse' => $warehouse->name,
                         'item' => $requestItem->item->name,
@@ -113,6 +164,6 @@ class AidRequestController extends Controller
             ]);
         });
 
-        return redirect()->route('dashboard')->with('success', __('Shipment dispatched successfully. Tracking token: :token', ['token' => $shipment->qr_code_token]));
+        return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Shipment dispatched successfully. Tracking token: :token', ['token' => $shipment->qr_code_token]));
     }
 }

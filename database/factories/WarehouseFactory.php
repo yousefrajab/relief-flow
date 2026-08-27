@@ -17,6 +17,8 @@ class WarehouseFactory extends Factory
         return [
             'name' => fake()->company().' Depot',
             'location' => fake()->address(),
+            'latitude' => fake()->latitude(31, 31.6),
+            'longitude' => fake()->longitude(34.2, 34.5),
             'capacity' => fake()->numberBetween(1000, 20000),
             'status' => 'active',
         ];

@@ -1,6 +1,6 @@
 # ReliefFlow
 
-A humanitarian logistics coordination platform connecting **relief warehouses**, **depot managers**, and **field coordinators** to track relief item stock, route aid requests, and confirm deliveries with a QR-verified dispatch manifest. Built with **Laravel 12**, fully **bilingual (Arabic/English)** with automatic RTL/LTR switching.
+A humanitarian logistics coordination platform connecting **relief warehouses**, **depot managers**, and **field coordinators** to track relief item stock, route aid requests, and confirm deliveries with a QR-verified dispatch manifest — with AI-assisted triage, warehouse matching, and delivery verification throughout. Built with **Laravel 12**, fully **bilingual (Arabic/English)** with automatic RTL/LTR switching, and a public GPS map plus a no-login shipment tracker.
 
 ---
 
@@ -14,10 +14,10 @@ pending  →  dispatched  →  delivered
  rejected (a depot manager or admin can decline a request that can't be fulfilled)
 ```
 
-1. A **field coordinator** submits an aid request: a target distribution location, notes, and one or more relief items with quantities.
-2. A **depot manager** (or admin) reviews it and either **rejects** it with a reason, or **dispatches** it — picking a source warehouse and driver details. Dispatch checks stock for every requested item across the chosen warehouse; if anything is short, the whole dispatch is rejected with the exact shortfall shown, and nothing is deducted.
-3. On a successful dispatch, stock is deducted from that warehouse, a **shipment** record is created with a unique QR tracking token, and a printable manifest becomes available.
-4. The coordinator confirms receipt in the field once the goods arrive, closing out both the shipment and the original aid request as **delivered**.
+1. A **field coordinator** submits an aid request: a target distribution location (optionally pinned on a map), notes, and one or more relief items with quantities. An AI pass reads the location and notes and tags the request `normal` / `high` / `critical` priority for triage — advisory only, it never blocks submission.
+2. A **depot manager** (or admin) opens the request and sees every active warehouse **ranked by distance and by whether it currently holds enough stock for every requested item**. They dispatch straight from the best match, or reject the request with a reason if nothing can fulfill it. Dispatch re-checks stock for every item before committing; if anything is short, nothing is deducted and the exact shortfall is shown.
+3. On a successful dispatch, stock is deducted from that warehouse, a **shipment** record is created with a unique QR tracking token, and a printable manifest becomes available — plus a public, no-login tracking page anyone can reach by scanning the QR code.
+4. The coordinator confirms receipt in the field once the goods arrive, optionally attaching a delivery photo. If attached, an AI pass does a quick plausibility check against the manifest and flags the delivery **AI Verified** or **Needs Review** (advisory, not a hard gate) — closing out both the shipment and the aid request as **delivered**.
 
 ---
 
@@ -31,21 +31,40 @@ pending  →  dispatched  →  delivered
 
 Account status: `pending_verification` / `active` / `suspended`. A pending or suspended user is redirected to an explanatory waiting page instead of the dashboard.
 
-**Admin:** manages warehouses and relief items, approves/suspends accounts, and can also reject/dispatch requests and confirm deliveries — full visibility across the platform.
+**Admin:** manages warehouses and relief items, approves/suspends accounts, and can also reject/dispatch requests and confirm deliveries — full visibility across the platform, plus the AI impact report.
 
-**Depot Manager:** manages warehouse stock levels, reviews pending aid requests, rejects or dispatches them, and tracks shipments already on the road.
+**Depot Manager:** manages warehouse stock levels, reviews pending aid requests using AI-ranked warehouse matches, dispatches or rejects them, and tracks shipments already on the road.
 
 **Field Coordinator:** submits aid requests with any number of relief items, tracks their own requests, and confirms delivery once a shipment reaches them.
 
 ---
 
-## 3. Bilingual support
+## 3. AI features
 
-Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
+All four run through a single `AIService`, wired to OpenAI's API. **Every one has a safe simulation-mode fallback** when `OPENAI_API_KEY` is left blank in `.env` — the app runs and demos fully with zero external calls and zero cost; connecting a key only makes the results smarter, nothing depends on it being present.
+
+- **Priority triage** — every new aid request is classified `normal` / `high` / `critical` from its notes and location. Simulation mode uses a keyword heuristic (urgent, emergency, injured, medical, children...).
+- **Smart warehouse matching** — `LogisticsService` ranks every active warehouse for a pending request by real Haversine distance and by whether it can fully cover every requested item, so the depot manager dispatches from the best option in one click instead of guessing.
+- **Delivery photo verification** — an optional photo attached at delivery is checked against the shipment's manifest and flagged `AI Verified` or `Needs Review`. Simulation mode always returns `Needs Review` with a note to check manually — it never fabricates a "verified" result without a real model behind it.
+- **Humanitarian impact report** — an AI-written 3–4 sentence narrative summary built strictly from real platform statistics (deliveries, active shipments, pending/rejected counts, categories distributed), available to admins and depot managers, printable.
 
 ---
 
-## 4. Tech stack
+## 4. Bilingual support
+
+Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen/landing page at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
+
+---
+
+## 5. Pages
+
+Public (no login): landing page, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
+
+Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, admin-managed), Relief Items (admin-managed), Inventory overview, Aid Requests (list + detail with timeline and AI-ranked dispatch), Shipments (detail with delivery confirmation + AI verification), Map (all warehouses and open requests plotted together), Impact Report (admin/depot manager), Accounts (admin), Profile, Help (role-aware FAQ).
+
+---
+
+## 6. Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -53,13 +72,15 @@ Every page renders in Arabic or English based on the session locale, switchable 
 | Auth | Session-based, hand-rolled registration + approval flow (no third-party auth package) |
 | Database | SQLite for local development (swap via `.env` for MySQL/PostgreSQL in production) |
 | Frontend | Blade + Alpine.js + Tailwind CSS v4 |
+| Maps | Leaflet.js + OpenStreetMap tiles (no API key required) |
+| AI | OpenAI Chat Completions API via `AIService`, simulation mode when no key is set |
 | Build | Vite |
 | QR codes | `bacon/bacon-qr-code` — generated locally as inline SVG, no external API call |
 | Tests | PHPUnit (Feature tests) |
 
 ---
 
-## 5. Local setup
+## 7. Local setup
 
 ```bash
 composer install
@@ -68,6 +89,7 @@ php artisan key:generate
 
 touch database/database.sqlite
 php artisan migrate
+php artisan storage:link
 
 npm install
 npm run build   # or: npm run dev
@@ -83,68 +105,88 @@ There is no public signup for admins — create the first (and any further) admi
 php artisan app:create-admin
 ```
 
+### Enabling real AI responses (optional)
+
+Set `OPENAI_API_KEY` in `.env`. Without it every AI feature above still works end-to-end in simulation mode.
+
 ### Demo data
 
-`php artisan db:seed` creates a depot manager and a field coordinator (`manager@reliefflow.com` / `coordinator@reliefflow.com`, password `password`), three sample warehouses, four relief items, and some starting stock — useful for trying the full flow immediately after `app:create-admin`.
+`php artisan db:seed` creates a depot manager and a field coordinator (`manager@reliefflow.com` / `coordinator@reliefflow.com`, password `password`), three sample warehouses with real GPS coordinates, four relief items, some starting stock, and one sample critical-priority aid request — useful for trying the full flow, including the map and smart matching, immediately after `app:create-admin`.
 
 ---
 
-## 6. Tests
+## 8. Tests
 
 ```bash
 php artisan test
 ```
 
-Feature tests cover: registration and admin approval (including that pending/suspended accounts can't reach the dashboard and nobody can self-register as admin), the full aid-request lifecycle (multi-item requests, dispatch with stock deduction, insufficient-stock rejection, request rejection, delivery confirmation and who's allowed to confirm it), and admin-only warehouse/item/inventory management (including that a warehouse with shipment history or an item with stock can't be deleted).
+Feature tests cover: registration and admin approval (including that pending/suspended accounts can't reach the dashboard and nobody can self-register as admin), the full aid-request lifecycle (multi-item requests, AI priority tagging, dispatch with stock deduction, insufficient-stock rejection, request rejection, delivery confirmation and who's allowed to confirm it), admin-only warehouse/item/inventory management (including that a warehouse with shipment history or an item with stock can't be deleted), the public tracking page (and that it never leaks driver phone numbers), profile/password updates, and the AI/logistics services directly (priority classification, warehouse ranking by distance and stock, delivery photo verification) in simulation mode.
 
 ---
 
-## 7. Project structure
+## 9. Project structure
 
 ```
 app/
   Http/Controllers/
     AuthController.php            # Login / logout
     Auth/RegisteredUserController.php
-    AdminController.php           # Approve / suspend accounts
+    AdminController.php           # Accounts page, approve / suspend
     DashboardController.php       # Per-role dashboard data
-    WarehouseController.php       # Admin-only CRUD
-    ItemController.php            # Admin-only CRUD
-    InventoryController.php       # Add stock (admin + depot manager)
-    AidRequestController.php      # Submit / reject / dispatch
-    ShipmentController.php        # Confirm delivery / print manifest
+    WarehouseController.php       # index/show + admin-only CRUD
+    ItemController.php            # index + admin-only CRUD
+    InventoryController.php       # Stock overview + add stock
+    AidRequestController.php      # index/create/show/store/reject/dispatch
+    ShipmentController.php        # show/deliver/print + public track()
+    ProfileController.php
+    ReportController.php          # AI impact report
+    MapController.php             # GPS overview
   Policies/
-    AidRequestPolicy.php          # create / reject / dispatch / confirmDelivery
+    AidRequestPolicy.php          # create / view / reject / dispatch / confirmDelivery
     ShipmentPolicy.php            # view / deliver
   Http/Middleware/
     EnsureUserIsAdmin.php
     EnsureUserIsActive.php        # Gates the dashboard for pending/suspended accounts
     SetLocale.php
-  Services/QrCodeService.php      # Local SVG QR generation
+  Services/
+    AIService.php                 # OpenAI integration + simulation-mode fallback
+    LogisticsService.php          # Haversine distance + warehouse stock ranking
+    QrCodeService.php             # Local SVG QR generation
   Console/Commands/CreateAdminUser.php
 
 resources/views/
+  welcome.blade.php               # Public landing page
+  tracking/show.blade.php         # Public QR shipment tracker
   dashboards/                     # admin.blade.php, depot-manager.blade.php, coordinator.blade.php
-  partials/aid-request-list.blade.php
-  shipments/print.blade.php       # Printable dispatch manifest with embedded QR
+  warehouses/, items/, inventory/, aid-requests/, shipments/, admin/, profile/, reports/, map/
+  components/location-picker.blade.php  # Reusable Leaflet map picker
   layouts/app.blade.php           # Sidebar shell for authenticated pages
   layouts/guest.blade.php         # Auth pages shell
 
 lang/ar.json                      # Arabic translations (English is the fallback/default)
-tests/Feature/                    # Registration/approval, aid-request lifecycle, admin resource management
+tests/Feature/                    # Registration/approval, aid-request lifecycle, admin resource
+                                   # management, public pages, AI/logistics services, profile
 ```
 
 ---
 
-## 8. Visual identity
+## 10. Visual identity
 
 A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages.
 
 ---
 
-## 9. Before a production deploy
+## 11. Privacy note on the public tracking page
+
+`/track/{token}` is reachable by anyone with the QR code — no login. It intentionally shows only what a recipient needs to verify a shipment (status, manifest contents, driver name, origin warehouse name, destination) and **omits** the driver's phone number and precise warehouse GPS coordinates, since this page is public by design and the platform may be used in sensitive contexts.
+
+---
+
+## 12. Before a production deploy
 
 - Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, a freshly generated `APP_KEY`.
 - A real database engine (MySQL/PostgreSQL) instead of SQLite.
 - A real mail driver if email notifications are added later (none are wired up yet — approvals and dispatches currently only show as in-app flash messages).
-- `php artisan config:cache` and `php artisan route:cache` for performance.
+- An `OPENAI_API_KEY` if real AI responses are wanted instead of simulation mode.
+- `php artisan storage:link` on the server (for delivery photos) and `php artisan config:cache` / `route:cache` for performance.
