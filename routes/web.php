@@ -79,6 +79,19 @@ Route::middleware('auth')->group(function () {
         Route::post('/shipments/{shipment}/deliver', [ShipmentController::class, 'deliver'])->name('shipments.deliver');
         Route::get('/shipments/{shipment}/print', [ShipmentController::class, 'print'])->name('shipments.print');
 
+        Route::post('/notifications/read-all', function () {
+            Auth::user()->unreadNotifications->markAsRead();
+
+            return redirect()->back();
+        })->name('notifications.read-all');
+
+        Route::get('/notifications/{id}/read', function (string $id) {
+            $notification = Auth::user()->notifications()->findOrFail($id);
+            $notification->markAsRead();
+
+            return redirect()->to($notification->data['url'] ?? route('dashboard'));
+        })->name('notifications.read');
+
         Route::middleware('admin')->group(function () {
             Route::post('/warehouses', [WarehouseController::class, 'store'])->name('warehouses.store');
             Route::put('/warehouses/{warehouse}', [WarehouseController::class, 'update'])->name('warehouses.update');

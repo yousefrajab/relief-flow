@@ -88,6 +88,40 @@
         </aside>
 
         <main class="flex-grow min-h-screen">
+            <div class="flex justify-end px-5 md:px-8 pt-5 md:pt-8 max-w-7xl mx-auto">
+                @php $unread = auth()->user()->unreadNotifications; @endphp
+                <div class="relative" x-data="{ open: false }">
+                    <button type="button" x-on:click="open = !open" x-on:click.outside="open = false" class="relative w-10 h-10 rounded-xl bg-white border border-ink-100 flex items-center justify-center hover:border-field-300 transition-colors">
+                        <svg class="w-4.5 h-4.5 text-ink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        @if($unread->count() > 0)
+                            <span class="absolute -top-1 -{{ app()->getLocale() === 'ar' ? 'start' : 'end' }}-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">{{ $unread->count() }}</span>
+                        @endif
+                    </button>
+
+                    <div x-show="open" x-cloak x-transition class="absolute {{ app()->getLocale() === 'ar' ? 'start-0' : 'end-0' }} mt-2 w-80 bg-white border border-ink-100 rounded-2xl shadow-xl z-50 overflow-hidden">
+                        <div class="flex items-center justify-between px-4 py-3 border-b border-ink-100">
+                            <p class="text-xs font-bold text-ink-900">{{ __('Notifications') }}</p>
+                            @if($unread->count() > 0)
+                                <form method="POST" action="{{ route('notifications.read-all') }}">
+                                    @csrf
+                                    <button type="submit" class="text-[10px] font-bold text-field-600 hover:text-field-700">{{ __('Mark all read') }}</button>
+                                </form>
+                            @endif
+                        </div>
+                        <div class="max-h-80 overflow-y-auto divide-y divide-ink-50">
+                            @forelse($unread->take(8) as $notification)
+                                <a href="{{ route('notifications.read', $notification->id) }}" class="block px-4 py-3 hover:bg-ink-50 transition-colors">
+                                    <p class="text-[11px] text-ink-700 leading-relaxed">{{ $notification->data['message'] ?? '' }}</p>
+                                    <p class="text-[10px] text-ink-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                </a>
+                            @empty
+                                <p class="px-4 py-6 text-[11px] text-ink-400 text-center">{{ __('No new notifications.') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="p-5 md:p-8 max-w-7xl mx-auto space-y-6">
                 @if(session('success'))
                     <div class="bg-field-50 border border-field-200 text-field-800 text-xs font-bold rounded-2xl px-4 py-3">

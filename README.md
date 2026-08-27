@@ -50,13 +50,29 @@ All four run through a single `AIService`, wired to OpenAI's API. **Every one ha
 
 ---
 
-## 4. Bilingual support
+## 4. Notifications
+
+Every meaningful status change fires a Laravel Notification on both the `database` channel (the bell icon in the sidebar, with an unread badge and mark-as-read) and the `mail` channel where the recipient needs to act on it:
+
+| Event | Recipient(s) | Channels |
+|---|---|---|
+| Account approved / suspended | The affected user | database + mail |
+| Aid request submitted | Every active admin and depot manager | database |
+| Aid request rejected | The coordinator who submitted it | database + mail |
+| Shipment dispatched | The coordinator who submitted the request | database + mail, plus an SMS + WhatsApp alert to the **driver** (who has no account — reached by phone number only) |
+| Shipment delivered | Every active admin and depot manager | database |
+
+Driver SMS/WhatsApp alerts go through `NotificationService`, wired to Twilio and UltraMsg. Leaving `TWILIO_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_NUMBER` or `ULTRAMSG_INSTANCE_ID`/`ULTRAMSG_TOKEN` blank in `.env` logs the message instead of sending it — the dispatch flow works fully without either service configured. Mail follows whatever `MAIL_MAILER` is set to (`log` by default, so nothing is actually sent until a real driver is configured).
+
+---
+
+## 5. Bilingual support
 
 Every page renders in Arabic or English based on the session locale, switchable from the sidebar/login screen/landing page at any time. The `<html dir>` attribute flips automatically between `rtl` and `ltr`, and the layout uses CSS logical properties (`ms-`, `me-`, `ps-`, `pe-`, `text-start`/`text-end`) so spacing and alignment mirror correctly in both directions without duplicated markup. Translations live in `lang/ar.json` (English strings are the translation keys, so English needs no separate file).
 
 ---
 
-## 5. Pages
+## 6. Pages
 
 Public (no login): landing page, `/track/{token}` shipment tracker (status, manifest, driver name — deliberately omits driver phone and exact warehouse coordinates).
 
@@ -64,7 +80,7 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 
 ---
 
-## 6. Tech stack
+## 7. Tech stack
 
 | Layer | Technology |
 |---|---|
@@ -74,13 +90,14 @@ Authenticated: role-aware dashboard, Warehouses (list + detail with GPS map, adm
 | Frontend | Blade + Alpine.js + Tailwind CSS v4 |
 | Maps | Leaflet.js + OpenStreetMap tiles (no API key required) |
 | AI | OpenAI Chat Completions API via `AIService`, simulation mode when no key is set |
+| Notifications | Laravel Notifications (database + mail), Twilio (SMS) and UltraMsg (WhatsApp) for driver alerts, simulation mode when unconfigured |
 | Build | Vite |
 | QR codes | `bacon/bacon-qr-code` — generated locally as inline SVG, no external API call |
 | Tests | PHPUnit (Feature tests) |
 
 ---
 
-## 7. Local setup
+## 8. Local setup
 
 ```bash
 composer install
@@ -115,17 +132,17 @@ Set `OPENAI_API_KEY` in `.env`. Without it every AI feature above still works en
 
 ---
 
-## 8. Tests
+## 9. Tests
 
 ```bash
 php artisan test
 ```
 
-Feature tests cover: registration and admin approval (including that pending/suspended accounts can't reach the dashboard and nobody can self-register as admin), the full aid-request lifecycle (multi-item requests, AI priority tagging, dispatch with stock deduction, insufficient-stock rejection, request rejection, delivery confirmation and who's allowed to confirm it), admin-only warehouse/item/inventory management (including that a warehouse with shipment history or an item with stock can't be deleted), the public tracking page (and that it never leaks driver phone numbers), profile/password updates, and the AI/logistics services directly (priority classification, warehouse ranking by distance and stock, delivery photo verification) in simulation mode.
+Feature tests cover: registration and admin approval (including that pending/suspended accounts can't reach the dashboard and nobody can self-register as admin), the full aid-request lifecycle (multi-item requests, AI priority tagging, dispatch with stock deduction, insufficient-stock rejection, request rejection, delivery confirmation and who's allowed to confirm it), admin-only warehouse/item/inventory management (including that a warehouse with shipment history or an item with stock can't be deleted), the public tracking page (and that it never leaks driver phone numbers), profile/password updates, the AI/logistics services directly (priority classification, warehouse ranking by distance and stock, delivery photo verification) in simulation mode, and notifications (who gets notified for each event, that suspended staff are excluded, and that the bell's mark-as-read flow works).
 
 ---
 
-## 9. Project structure
+## 10. Project structure
 
 ```
 app/
@@ -153,6 +170,9 @@ app/
     AIService.php                 # OpenAI integration + simulation-mode fallback
     LogisticsService.php          # Haversine distance + warehouse stock ranking
     QrCodeService.php             # Local SVG QR generation
+    NotificationService.php       # Twilio SMS + UltraMsg WhatsApp, simulation-mode fallback
+  Notifications/                  # One class per event — see the Notifications table above
+  Mail/ReliefFlowAlertMail.php    # Shared HTML mail template, escapes all interpolated content
   Console/Commands/CreateAdminUser.php
 
 resources/views/
@@ -161,32 +181,34 @@ resources/views/
   dashboards/                     # admin.blade.php, depot-manager.blade.php, coordinator.blade.php
   warehouses/, items/, inventory/, aid-requests/, shipments/, admin/, profile/, reports/, map/
   components/location-picker.blade.php  # Reusable Leaflet map picker
-  layouts/app.blade.php           # Sidebar shell for authenticated pages
+  layouts/app.blade.php           # Sidebar shell with the notification bell for authenticated pages
   layouts/guest.blade.php         # Auth pages shell
 
 lang/ar.json                      # Arabic translations (English is the fallback/default)
 tests/Feature/                    # Registration/approval, aid-request lifecycle, admin resource
-                                   # management, public pages, AI/logistics services, profile
+                                   # management, public pages, AI/logistics services, profile,
+                                   # notifications
 ```
 
 ---
 
-## 10. Visual identity
+## 11. Visual identity
 
 A "field teal" palette distinct from a warm hospitality look — trustworthy and operational rather than decorative: deep teal `#0F6B5C` as the primary action color, amber `#F88A0B` reserved for alerts and low-stock warnings, and cool ink-slate neutrals for text and backgrounds. Typeface: **IBM Plex Sans Arabic** paired with **IBM Plex Sans** for Latin text, giving one consistent look across both languages.
 
 ---
 
-## 11. Privacy note on the public tracking page
+## 12. Privacy note on the public tracking page
 
 `/track/{token}` is reachable by anyone with the QR code — no login. It intentionally shows only what a recipient needs to verify a shipment (status, manifest contents, driver name, origin warehouse name, destination) and **omits** the driver's phone number and precise warehouse GPS coordinates, since this page is public by design and the platform may be used in sensitive contexts.
 
 ---
 
-## 12. Before a production deploy
+## 13. Before a production deploy
 
 - Production `.env`: `APP_ENV=production`, `APP_DEBUG=false`, a freshly generated `APP_KEY`.
 - A real database engine (MySQL/PostgreSQL) instead of SQLite.
-- A real mail driver if email notifications are added later (none are wired up yet — approvals and dispatches currently only show as in-app flash messages).
+- A real mail driver instead of `MAIL_MAILER=log` so account/request/shipment notifications actually reach recipients' inboxes.
+- `TWILIO_SID`/`TWILIO_AUTH_TOKEN`/`TWILIO_NUMBER` and/or `ULTRAMSG_INSTANCE_ID`/`ULTRAMSG_TOKEN` if real SMS/WhatsApp alerts to drivers are wanted instead of simulation mode.
 - An `OPENAI_API_KEY` if real AI responses are wanted instead of simulation mode.
 - `php artisan storage:link` on the server (for delivery photos) and `php artisan config:cache` / `route:cache` for performance.
