@@ -1,24 +1,25 @@
 <x-app-layout>
     <div class="space-y-8">
-        <div>
-            <h1 class="text-xl font-bold text-ink-900">{{ __('Depot Operations') }}</h1>
-            <p class="text-xs text-ink-500 mt-1">{{ __('Manage stock levels and dispatch shipments to the field.') }}</p>
-        </div>
+        <x-welcome-banner :title="__('Welcome back, :name', ['name' => auth()->user()->name])" :subtitle="__('Manage stock levels and dispatch shipments to the field.')" />
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <a href="{{ route('aid-requests.index') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 transition-colors">
+            <a href="{{ route('aid-requests.index') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 hover:shadow-md transition-all">
+                <div class="w-9 h-9 rounded-xl bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center mb-3"><x-icon name="exclamation" class="w-4.5 h-4.5" /></div>
                 <p class="text-[10px] font-bold text-amber-alert-600 uppercase tracking-wide">{{ __('Pending Requests') }}</p>
                 <p class="text-2xl font-extrabold text-ink-900 mt-1">{{ $pendingRequestsCount }}</p>
             </a>
-            <a href="{{ route('aid-requests.index') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 transition-colors">
+            <a href="{{ route('aid-requests.index') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 hover:shadow-md transition-all">
+                <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3"><x-icon name="truck" class="w-4.5 h-4.5" /></div>
                 <p class="text-[10px] font-bold text-sky-600 uppercase tracking-wide">{{ __('Active Shipments') }}</p>
                 <p class="text-2xl font-extrabold text-ink-900 mt-1">{{ $dispatchedCount }}</p>
             </a>
-            <a href="{{ route('inventory.index') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 transition-colors">
+            <a href="{{ route('inventory.index') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 hover:shadow-md transition-all">
+                <div class="w-9 h-9 rounded-xl bg-field-50 text-field-600 flex items-center justify-center mb-3"><x-icon name="inventory" class="w-4.5 h-4.5" /></div>
                 <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Inventory') }}</p>
                 <p class="text-2xl font-extrabold text-ink-900 mt-1">&rarr;</p>
             </a>
-            <a href="{{ route('map.show') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 transition-colors">
+            <a href="{{ route('map.show') }}" class="bg-white border border-ink-100 rounded-2xl p-5 hover:border-field-300 hover:shadow-md transition-all">
+                <div class="w-9 h-9 rounded-xl bg-field-50 text-field-600 flex items-center justify-center mb-3"><x-icon name="map" class="w-4.5 h-4.5" /></div>
                 <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Map') }}</p>
                 <p class="text-2xl font-extrabold text-ink-900 mt-1">&rarr;</p>
             </a>

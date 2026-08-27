@@ -10,22 +10,54 @@
             <p class="text-sm text-ink-800 leading-relaxed">{{ $narrative }}</p>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white border border-ink-100 rounded-2xl p-5">
-                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Delivered') }}</p>
-                <p class="text-2xl font-extrabold text-field-600 mt-1">{{ number_format($stats['delivered_count']) }}</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 gap-4 md:col-span-2">
+                <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                    <div class="w-9 h-9 rounded-xl bg-field-50 text-field-600 flex items-center justify-center mb-3"><x-icon name="check-circle" class="w-4.5 h-4.5" /></div>
+                    <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Delivered') }}</p>
+                    <p class="text-2xl font-extrabold text-field-600 mt-1">{{ number_format($stats['delivered_count']) }}</p>
+                </div>
+                <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                    <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center mb-3"><x-icon name="truck" class="w-4.5 h-4.5" /></div>
+                    <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('In Transit') }}</p>
+                    <p class="text-2xl font-extrabold text-sky-600 mt-1">{{ number_format($stats['active_count']) }}</p>
+                </div>
+                <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center mb-3"><x-icon name="exclamation" class="w-4.5 h-4.5" /></div>
+                    <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Pending') }}</p>
+                    <p class="text-2xl font-extrabold text-amber-alert-600 mt-1">{{ number_format($stats['pending_count']) }}</p>
+                </div>
+                <div class="bg-white border border-ink-100 rounded-2xl p-5">
+                    <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3"><x-icon name="trash" class="w-4.5 h-4.5" /></div>
+                    <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Rejected') }}</p>
+                    <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ number_format($stats['rejected_count']) }}</p>
+                </div>
             </div>
-            <div class="bg-white border border-ink-100 rounded-2xl p-5">
-                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('In Transit') }}</p>
-                <p class="text-2xl font-extrabold text-sky-600 mt-1">{{ number_format($stats['active_count']) }}</p>
-            </div>
-            <div class="bg-white border border-ink-100 rounded-2xl p-5">
-                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Pending') }}</p>
-                <p class="text-2xl font-extrabold text-amber-alert-600 mt-1">{{ number_format($stats['pending_count']) }}</p>
-            </div>
-            <div class="bg-white border border-ink-100 rounded-2xl p-5">
-                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide">{{ __('Rejected') }}</p>
-                <p class="text-2xl font-extrabold text-rose-600 mt-1">{{ number_format($stats['rejected_count']) }}</p>
+
+            <div
+                class="bg-white border border-ink-100 rounded-2xl p-5 flex flex-col items-center justify-center"
+                x-data="{
+                    init() {
+                        new Chart(this.$refs.canvas, {
+                            type: 'doughnut',
+                            data: {
+                                labels: [@js(__('Delivered')), @js(__('In Transit')), @js(__('Pending')), @js(__('Rejected'))],
+                                datasets: [{
+                                    data: [{{ $stats['delivered_count'] }}, {{ $stats['active_count'] }}, {{ $stats['pending_count'] }}, {{ $stats['rejected_count'] }}],
+                                    backgroundColor: ['#147e63', '#0284c7', '#f88a0b', '#e11d48'],
+                                    borderWidth: 0,
+                                }],
+                            },
+                            options: {
+                                plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } },
+                                cutout: '65%',
+                            },
+                        });
+                    }
+                }"
+            >
+                <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide self-start mb-2">{{ __('Request status breakdown') }}</p>
+                <canvas x-ref="canvas" width="180" height="180"></canvas>
             </div>
         </div>
 
