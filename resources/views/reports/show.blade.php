@@ -2,7 +2,10 @@
     <div class="space-y-6 max-w-3xl">
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-bold text-ink-900">{{ __('Humanitarian Impact Report') }}</h1>
-            <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold">{{ __('Print / Save as PDF') }}</button>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('reports.export') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-ink-200 hover:border-ink-300 text-ink-700 text-xs font-bold"><x-icon name="chart" class="w-4 h-4" /> {{ __('Export CSV') }}</a>
+                <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold">{{ __('Print / Save as PDF') }}</button>
+            </div>
         </div>
 
         <div class="bg-white border border-ink-100 rounded-2xl p-6 space-y-2">
@@ -59,6 +62,48 @@
                 <p class="text-[10px] font-bold text-ink-400 uppercase tracking-wide self-start mb-2">{{ __('Request status breakdown') }}</p>
                 <canvas x-ref="canvas" width="180" height="180"></canvas>
             </div>
+        </div>
+
+        <div
+            class="bg-white border border-ink-100 rounded-2xl p-6"
+            x-data="{
+                init() {
+                    new Chart(this.$refs.trend, {
+                        type: 'line',
+                        data: {
+                            labels: @js(collect($weeklyTrend)->pluck('label')),
+                            datasets: [
+                                {
+                                    label: @js(__('Requests submitted')),
+                                    data: @js(collect($weeklyTrend)->pluck('requests')),
+                                    borderColor: '#147e63',
+                                    backgroundColor: 'rgba(20, 126, 99, 0.1)',
+                                    tension: 0.3,
+                                    fill: true,
+                                },
+                                {
+                                    label: @js(__('Deliveries confirmed')),
+                                    data: @js(collect($weeklyTrend)->pluck('deliveries')),
+                                    borderColor: '#0284c7',
+                                    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                                    tension: 0.3,
+                                    fill: true,
+                                },
+                            ],
+                        },
+                        options: {
+                            plugins: { legend: { position: 'bottom', labels: { boxWidth: 8, font: { size: 10 } } } },
+                            scales: {
+                                y: { beginAtZero: true, ticks: { precision: 0, font: { size: 10 } } },
+                                x: { ticks: { font: { size: 10 } } },
+                            },
+                        },
+                    });
+                }
+            }"
+        >
+            <p class="text-[11px] font-bold text-ink-500 mb-3">{{ __('Weekly activity (last 8 weeks)') }}</p>
+            <canvas x-ref="trend" height="90"></canvas>
         </div>
 
         @if($topCategories->isNotEmpty())

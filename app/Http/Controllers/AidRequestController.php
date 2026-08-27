@@ -22,10 +22,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AidRequestController extends Controller
 {
-    public function index(): View
+    private function filteredAidRequestsQuery(Request $request)
     {
         $user = Auth::user();
 
@@ -35,9 +36,64 @@ class AidRequestController extends Controller
             $query->where('user_id', $user->id);
         }
 
-        $aidRequests = $query->orderBy('id', 'desc')->paginate(15);
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-        return view('aid-requests.index', compact('aidRequests'));
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('location', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        return $query;
+    }
+
+    public function index(Request $request): View
+    {
+        $aidRequests = $this->filteredAidRequestsQuery($request)
+            ->orderBy('id', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('aid-requests.index', [
+            'aidRequests' => $aidRequests,
+            'filters' => $request->only(['status', 'priority', 'search']),
+        ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $aidRequests = $this->filteredAidRequestsQuery($request)->orderBy('id', 'desc')->get();
+
+        $filename = 'aid-requests-'.now()->format('Y-m-d').'.csv';
+
+        return response()->streamDownload(function () use ($aidRequests) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, ['ID', 'Location', 'Coordinator', 'Status', 'Priority', 'Items', 'Submitted At']);
+
+            foreach ($aidRequests as $aidRequest) {
+                $items = $aidRequest->requestItems->map(fn ($i) => $i->item->name.' x'.$i->quantity)->implode('; ');
+                fputcsv($handle, [
+                    $aidRequest->id,
+                    $aidRequest->location,
+                    $aidRequest->user->name,
+                    $aidRequest->status,
+                    $aidRequest->priority,
+                    $items,
+                    $aidRequest->created_at->toDateTimeString(),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv']);
     }
 
     public function create(): View

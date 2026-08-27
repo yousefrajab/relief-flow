@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReliefFlow</title>
+    @include('partials.theme-init')
 
     @vite(['resources/css/app.css'])
 </head>
@@ -19,9 +20,10 @@
                 <span class="text-lg font-bold text-ink-900">ReliefFlow</span>
             </div>
             <div class="flex items-center gap-3">
-                <div class="flex gap-1">
+                <div class="flex gap-1 items-center">
                     <a href="{{ route('locale.switch', 'ar') }}" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold {{ app()->getLocale() === 'ar' ? 'bg-field-500 text-white' : 'text-ink-500 hover:bg-ink-100' }} transition">AR</a>
                     <a href="{{ route('locale.switch', 'en') }}" class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold {{ app()->getLocale() === 'en' ? 'bg-field-500 text-white' : 'text-ink-500 hover:bg-ink-100' }} transition">EN</a>
+                    <x-theme-toggle class="w-8 h-8 flex items-center justify-center rounded-lg text-ink-500 hover:bg-ink-100 transition shrink-0" />
                 </div>
                 <a href="{{ route('login') }}" class="text-xs font-bold text-ink-700 hover:text-ink-900">{{ __('Sign in') }}</a>
                 <a href="{{ route('register') }}" class="px-4 py-2 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold">{{ __('Register') }}</a>

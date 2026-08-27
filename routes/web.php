@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/help', fn () => view('help'))->name('help');
         Route::get('/map', [MapController::class, 'show'])->name('map.show');
         Route::get('/reports', [ReportController::class, 'show'])->name('reports.show');
+        Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -75,6 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/inventory', [InventoryController::class, 'store'])->name('inventory.store');
 
         Route::get('/aid-requests', [AidRequestController::class, 'index'])->name('aid-requests.index');
+        Route::get('/aid-requests/export', [AidRequestController::class, 'export'])->name('aid-requests.export');
         Route::get('/aid-requests/create', [AidRequestController::class, 'create'])->name('aid-requests.create');
         Route::get('/aid-requests/{aidRequest}', [AidRequestController::class, 'show'])->name('aid-requests.show');
         Route::post('/aid-requests', [AidRequestController::class, 'store'])->name('aid-requests.store');

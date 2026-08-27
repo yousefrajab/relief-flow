@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReliefFlow — {{ $title ?? __('Dashboard') }}</title>
+    @include('partials.theme-init')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>[x-cloak] { display: none !important; }</style>
@@ -59,6 +60,7 @@
                 <div class="flex gap-2 px-1">
                     <a href="{{ route('locale.switch', 'ar') }}" class="flex-1 text-center px-2 py-1.5 rounded-lg text-[11px] font-bold {{ app()->getLocale() === 'ar' ? 'bg-field-500 text-white' : 'bg-white/5 text-ink-300 hover:bg-white/10' }} transition">AR</a>
                     <a href="{{ route('locale.switch', 'en') }}" class="flex-1 text-center px-2 py-1.5 rounded-lg text-[11px] font-bold {{ app()->getLocale() === 'en' ? 'bg-field-500 text-white' : 'bg-white/5 text-ink-300 hover:bg-white/10' }} transition">EN</a>
+                    <x-theme-toggle class="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 text-ink-300 hover:bg-white/10 transition shrink-0" />
                 </div>
 
                 <div class="bg-white/5 rounded-2xl p-3.5">
@@ -87,7 +89,7 @@
             </div>
         </aside>
 
-        <main class="flex-grow min-h-screen" style="background-image: radial-gradient(circle at 0% 0%, var(--color-field-50) 0%, transparent 45%);">
+        <main class="flex-grow min-h-screen app-main-bg">
             <div class="flex justify-end px-5 md:px-8 pt-5 md:pt-8 max-w-7xl mx-auto">
                 @php $unread = auth()->user()->unreadNotifications; @endphp
                 <div class="relative" x-data="{ open: false }">
