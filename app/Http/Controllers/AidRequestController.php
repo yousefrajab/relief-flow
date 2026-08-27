@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AidRequest;
+use App\Models\AidRequestActivity;
 use App\Models\AidRequestItem;
 use App\Models\Inventory;
 use App\Models\Item;
@@ -86,6 +87,12 @@ class AidRequestController extends Controller
             return $aidRequest;
         });
 
+        AidRequestActivity::create([
+            'aid_request_id' => $aidRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'submitted',
+        ]);
+
         $staff = User::whereIn('role', ['admin', 'depot_manager'])->where('status', 'active')->get();
         if ($staff->isNotEmpty()) {
             Notification::send($staff, new AidRequestSubmittedNotification($aidRequest));
@@ -98,7 +105,7 @@ class AidRequestController extends Controller
     {
         $this->authorize('view', $aidRequest);
 
-        $aidRequest->load(['requestItems.item', 'user', 'shipment.warehouse']);
+        $aidRequest->load(['requestItems.item', 'user', 'shipment.warehouse', 'activities.user']);
 
         $matches = null;
         if ($aidRequest->status === 'pending') {
@@ -119,6 +126,13 @@ class AidRequestController extends Controller
         $aidRequest->update([
             'status' => 'rejected',
             'rejection_reason' => $request->rejection_reason,
+        ]);
+
+        AidRequestActivity::create([
+            'aid_request_id' => $aidRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'rejected',
+            'notes' => $request->rejection_reason,
         ]);
 
         $aidRequest->user->notify(new AidRequestRejectedNotification($aidRequest));
@@ -178,6 +192,14 @@ class AidRequestController extends Controller
         });
 
         $shipment->setRelation('warehouse', $warehouse);
+
+        AidRequestActivity::create([
+            'aid_request_id' => $aidRequest->id,
+            'user_id' => Auth::id(),
+            'action' => 'dispatched',
+            'notes' => __('From :warehouse, driver :driver', ['warehouse' => $warehouse->name, 'driver' => $request->driver_name]),
+        ]);
+
         $aidRequest->user->notify(new ShipmentDispatchedNotification($shipment));
 
         $trackingUrl = route('tracking.show', $shipment->qr_code_token);

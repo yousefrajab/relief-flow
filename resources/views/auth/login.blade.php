@@ -25,10 +25,13 @@
             <x-input-error :messages="$errors->get('password')" />
         </div>
 
-        <label class="flex items-center gap-2 text-xs text-ink-300">
-            <input type="checkbox" name="remember" class="rounded border-white/20 bg-ink-900/40 text-field-500 focus:ring-field-500">
-            {{ __('Remember me') }}
-        </label>
+        <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 text-xs text-ink-300">
+                <input type="checkbox" name="remember" class="rounded border-white/20 bg-ink-900/40 text-field-500 focus:ring-field-500">
+                {{ __('Remember me') }}
+            </label>
+            <a href="{{ route('password.request') }}" class="text-xs font-bold text-field-400 hover:text-field-300">{{ __('Forgot password?') }}</a>
+        </div>
 
         <x-primary-button class="w-full justify-center py-3">{{ __('Sign in') }}</x-primary-button>
     </form>

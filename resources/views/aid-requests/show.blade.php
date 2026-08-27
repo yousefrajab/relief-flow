@@ -75,6 +75,34 @@
             @endif
         </div>
 
+        <section class="space-y-3">
+            <h2 class="text-sm font-bold text-ink-900">{{ __('Activity Log') }}</h2>
+            <div class="bg-white border border-ink-100 rounded-2xl divide-y divide-ink-50">
+                @forelse($aidRequest->activities as $activity)
+                    <div class="p-4 flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-xs text-ink-800">
+                                <span class="font-bold">{{ $activity->user->name }}</span>
+                                {{ match($activity->action) {
+                                    'submitted' => __('submitted this request'),
+                                    'rejected' => __('rejected this request'),
+                                    'dispatched' => __('dispatched a shipment'),
+                                    'delivered' => __('confirmed delivery'),
+                                    default => $activity->action,
+                                } }}
+                            </p>
+                            @if($activity->notes)
+                                <p class="text-[11px] text-ink-500 mt-1">{{ $activity->notes }}</p>
+                            @endif
+                        </div>
+                        <p class="text-[10px] text-ink-400 shrink-0">{{ $activity->created_at->diffForHumans() }}</p>
+                    </div>
+                @empty
+                    <p class="p-4 text-[11px] text-ink-400">{{ __('No activity recorded yet.') }}</p>
+                @endforelse
+            </div>
+        </section>
+
         @can('reject', $aidRequest)
             <section class="space-y-3">
                 <h2 class="text-sm font-bold text-ink-900">{{ __('Dispatch this request') }}</h2>
