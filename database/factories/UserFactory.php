@@ -49,6 +49,11 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => ['role' => 'coordinator', 'status' => 'active']);
     }
 
+    public function driver(): static
+    {
+        return $this->state(fn (array $attributes) => ['role' => 'driver', 'status' => 'active', 'phone' => fake()->phoneNumber()]);
+    }
+
     public function pendingVerification(): static
     {
         return $this->state(fn (array $attributes) => ['status' => 'pending_verification']);

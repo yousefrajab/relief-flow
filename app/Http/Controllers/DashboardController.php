@@ -20,6 +20,7 @@ class DashboardController extends Controller
         return match ($user->role) {
             'admin' => $this->adminDashboard(),
             'depot_manager' => $this->depotManagerDashboard(),
+            'driver' => $this->driverDashboard($user),
             default => $this->coordinatorDashboard($user),
         };
     }
@@ -46,6 +47,24 @@ class DashboardController extends Controller
             'pendingRequests' => AidRequest::with(['requestItems.item', 'user'])
                 ->where('status', 'pending')
                 ->orderBy('id', 'desc')
+                ->limit(5)
+                ->get(),
+        ]);
+    }
+
+    private function driverDashboard(User $user): View
+    {
+        return view('dashboards.driver', [
+            'activeDeliveries' => Shipment::with(['aidRequest', 'warehouse'])
+                ->where('driver_user_id', $user->id)
+                ->where('status', 'dispatched')
+                ->orderBy('id', 'desc')
+                ->get(),
+            'deliveredCount' => Shipment::where('driver_user_id', $user->id)->where('status', 'delivered')->count(),
+            'recentDeliveries' => Shipment::with(['aidRequest', 'warehouse'])
+                ->where('driver_user_id', $user->id)
+                ->where('status', 'delivered')
+                ->orderBy('delivered_at', 'desc')
                 ->limit(5)
                 ->get(),
         ]);

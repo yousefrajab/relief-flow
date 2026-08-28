@@ -53,6 +53,7 @@ class AuditTrailTest extends TestCase
     public function test_dispatching_logs_an_activity(): void
     {
         $manager = User::factory()->depotManager()->create();
+        $driver = User::factory()->driver()->create();
         $warehouse = Warehouse::factory()->create();
         $item = Item::factory()->create();
         Inventory::create(['warehouse_id' => $warehouse->id, 'item_id' => $item->id, 'quantity' => 500]);
@@ -62,8 +63,7 @@ class AuditTrailTest extends TestCase
 
         $this->actingAs($manager)->post("/aid-requests/{$aidRequest->id}/dispatch", [
             'warehouse_id' => $warehouse->id,
-            'driver_name' => 'Test Driver',
-            'driver_phone' => '0599999999',
+            'driver_user_id' => $driver->id,
         ]);
 
         $this->assertDatabaseHas('aid_request_activities', [
@@ -93,6 +93,7 @@ class AuditTrailTest extends TestCase
         $admin = User::factory()->admin()->create();
         $manager = User::factory()->depotManager()->create();
         $coordinator = User::factory()->coordinator()->create();
+        $driver = User::factory()->driver()->create();
         $warehouse = Warehouse::factory()->create();
         $item = Item::factory()->create();
         Inventory::create(['warehouse_id' => $warehouse->id, 'item_id' => $item->id, 'quantity' => 500]);
@@ -105,8 +106,7 @@ class AuditTrailTest extends TestCase
 
         $this->actingAs($manager)->post("/aid-requests/{$aidRequest->id}/dispatch", [
             'warehouse_id' => $warehouse->id,
-            'driver_name' => 'Test Driver',
-            'driver_phone' => '0599999999',
+            'driver_user_id' => $driver->id,
         ]);
 
         $shipment = $aidRequest->fresh()->shipment;

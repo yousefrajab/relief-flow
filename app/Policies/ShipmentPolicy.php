@@ -11,7 +11,8 @@ class ShipmentPolicy
     {
         return $user->role === 'admin'
             || $user->role === 'depot_manager'
-            || $user->id === $shipment->aidRequest->user_id;
+            || $user->id === $shipment->aidRequest->user_id
+            || $user->id === $shipment->driver_user_id;
     }
 
     public function deliver(User $user, Shipment $shipment): bool
@@ -21,6 +22,7 @@ class ShipmentPolicy
         }
 
         return $user->role === 'admin'
-            || ($user->role === 'coordinator' && $user->id === $shipment->aidRequest->user_id);
+            || ($user->role === 'coordinator' && $user->id === $shipment->aidRequest->user_id)
+            || ($user->role === 'driver' && $user->id === $shipment->driver_user_id);
     }
 }

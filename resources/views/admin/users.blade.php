@@ -18,7 +18,7 @@
                                 </div>
                                 <div>
                                     <p class="text-xs font-bold text-ink-900">{{ $pending->name }}</p>
-                                    <p class="text-[11px] text-ink-500">{{ $pending->email }} · {{ $pending->role === 'depot_manager' ? __('Depot Manager') : __('Field Coordinator') }}</p>
+                                    <p class="text-[11px] text-ink-500">{{ $pending->email }} · {{ match($pending->role) { 'depot_manager' => __('Depot Manager'), 'driver' => __('Delivery Driver'), default => __('Field Coordinator') } }}</p>
                                 </div>
                             </div>
                             <div class="flex gap-2 shrink-0">
@@ -56,7 +56,7 @@
                             <x-status-badge :status="$member->status" />
                         </div>
                         <p class="text-[11px] text-ink-500 mt-1">{{ $member->email }}</p>
-                        <p class="text-[11px] text-ink-400">{{ $member->role === 'depot_manager' ? __('Depot Manager') : __('Field Coordinator') }}</p>
+                        <p class="text-[11px] text-ink-400">{{ match($member->role) { 'depot_manager' => __('Depot Manager'), 'driver' => __('Delivery Driver'), default => __('Field Coordinator') } }}</p>
                         @if($member->status === 'active')
                             <form method="POST" action="{{ route('users.reject', $member) }}" class="mt-2">
                                 @csrf

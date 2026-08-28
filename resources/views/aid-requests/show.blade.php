@@ -142,14 +142,18 @@
                                     @csrf
                                     <input type="hidden" name="warehouse_id" value="{{ $match['warehouse']->id }}">
                                     <div>
-                                        <x-input-label :value="__('Driver name')" />
-                                        <x-text-input name="driver_name" required />
+                                        <x-input-label :value="__('Driver')" />
+                                        <select name="driver_user_id" required class="block w-full rounded-xl border-ink-200 text-sm focus:border-field-500 focus:ring-field-500" @disabled($drivers->isEmpty())>
+                                            <option value="" disabled selected>{{ __('Select a driver') }}</option>
+                                            @foreach($drivers as $driver)
+                                                <option value="{{ $driver->id }}">{{ $driver->name }}{{ $driver->phone ? ' — '.$driver->phone : '' }}</option>
+                                            @endforeach
+                                        </select>
+                                        @if($drivers->isEmpty())
+                                            <p class="text-[11px] text-amber-alert-600 mt-1">{{ __('No approved delivery drivers yet. Ask an administrator to approve a driver account first.') }}</p>
+                                        @endif
                                     </div>
-                                    <div>
-                                        <x-input-label :value="__('Driver phone')" />
-                                        <x-text-input name="driver_phone" required />
-                                    </div>
-                                    <x-primary-button class="w-full justify-center">{{ __('Confirm Dispatch') }}</x-primary-button>
+                                    <x-primary-button class="w-full justify-center" :disabled="$drivers->isEmpty()">{{ __('Confirm Dispatch') }}</x-primary-button>
                                 </form>
                             </x-modal>
                         @endif
