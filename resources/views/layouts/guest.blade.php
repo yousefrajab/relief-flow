@@ -67,7 +67,7 @@
         </div>
 
         <div class="flex-grow flex items-center justify-center p-6">
-            <div class="w-full max-w-md">
+            <div class="w-full max-w-lg">
                 @if(session('success'))
                     <div class="bg-field-500/10 border border-field-500/20 text-field-300 text-xs font-bold rounded-2xl px-4 py-3 mb-5">
                         {{ session('success') }}
