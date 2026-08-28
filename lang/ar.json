@@ -315,6 +315,7 @@
     "To": "إلى",
     "Toggle dark mode": "تبديل الوضع الليلي",
     "Too many attempts. Please request a new code.": "محاولات كثيرة جداً. يرجى طلب رمز جديد.",
+    "Too many login attempts. Please try again in :seconds seconds.": "محاولات دخول كثيرة جداً. يرجى المحاولة مرة أخرى بعد :seconds ثانية.",
     "Track": "تتبع",
     "Track shipment": "تتبع الشحنة",
     "Two-Factor Verification": "التحقق بخطوتين",
