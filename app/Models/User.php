@@ -46,6 +46,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_location_at' => 'datetime',
+            'two_factor_expires_at' => 'datetime',
         ];
     }
 
