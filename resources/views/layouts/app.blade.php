@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>ReliefFlow — {{ $title ?? __('Dashboard') }}</title>
     @include('partials.theme-init')
 
@@ -96,33 +97,69 @@
         <main class="flex-grow min-h-screen app-main-bg">
             <div class="flex justify-end px-5 md:px-8 pt-5 md:pt-8 max-w-7xl mx-auto">
                 @php $unread = auth()->user()->unreadNotifications; @endphp
-                <div class="relative" x-data="{ open: false }">
+                <div
+                    class="relative"
+                    x-data="{
+                        open: false,
+                        pulse: false,
+                        count: {{ $unread->count() }},
+                        items: @js($unread->take(8)->map(fn ($n) => [
+                            'id' => $n->id,
+                            'message' => $n->data['message'] ?? '',
+                            'url' => route('notifications.read', $n->id),
+                            'created_at' => $n->created_at->diffForHumans(),
+                        ])->values()),
+                        init() {
+                            setInterval(() => this.poll(), 5000);
+                        },
+                        async poll() {
+                            try {
+                                const response = await fetch('{{ route('notifications.poll') }}', { headers: { 'Accept': 'application/json' } });
+                                if (!response.ok) return;
+                                const data = await response.json();
+                                if (data.count > this.count) {
+                                    this.pulse = true;
+                                    setTimeout(() => this.pulse = false, 1500);
+                                }
+                                this.count = data.count;
+                                this.items = data.items;
+                            } catch (e) {
+                                // Polling is a background convenience — a failed tick is retried automatically 5s later.
+                            }
+                        },
+                        async markAllRead() {
+                            this.count = 0;
+                            this.items = [];
+                            try {
+                                await fetch('{{ route('notifications.read-all') }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                        'Accept': 'application/json',
+                                    },
+                                });
+                            } catch (e) {}
+                        },
+                    }"
+                >
                     <button type="button" x-on:click="open = !open" x-on:click.outside="open = false" class="relative w-10 h-10 rounded-xl bg-white border border-ink-100 flex items-center justify-center hover:border-field-300 transition-colors">
-                        <x-icon name="bell" class="w-4.5 h-4.5 text-ink-600" />
-                        @if($unread->count() > 0)
-                            <span class="absolute -top-1 -{{ app()->getLocale() === 'ar' ? 'start' : 'end' }}-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">{{ $unread->count() }}</span>
-                        @endif
+                        <x-icon name="bell" class="w-4.5 h-4.5 text-ink-600" x-bind:class="pulse ? 'animate-bounce' : ''" />
+                        <span x-show="count > 0" x-cloak x-text="count > 9 ? '9+' : count" class="absolute -top-1 -end-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center"></span>
                     </button>
 
                     <div x-show="open" x-cloak x-transition class="absolute end-0 mt-2 w-80 max-w-[90vw] bg-white border border-ink-100 rounded-2xl shadow-xl z-50 overflow-hidden">
                         <div class="flex items-center justify-between px-4 py-3 border-b border-ink-100">
                             <p class="text-xs font-bold text-ink-900">{{ __('Notifications') }}</p>
-                            @if($unread->count() > 0)
-                                <form method="POST" action="{{ route('notifications.read-all') }}">
-                                    @csrf
-                                    <button type="submit" class="text-[10px] font-bold text-field-600 hover:text-field-700">{{ __('Mark all read') }}</button>
-                                </form>
-                            @endif
+                            <button type="button" x-show="count > 0" x-on:click="markAllRead()" class="text-[10px] font-bold text-field-600 hover:text-field-700">{{ __('Mark all read') }}</button>
                         </div>
                         <div class="max-h-80 overflow-y-auto divide-y divide-ink-50">
-                            @forelse($unread->take(8) as $notification)
-                                <a href="{{ route('notifications.read', $notification->id) }}" class="block px-4 py-3 hover:bg-ink-50 transition-colors">
-                                    <p class="text-[11px] text-ink-700 leading-relaxed">{{ $notification->data['message'] ?? '' }}</p>
-                                    <p class="text-[10px] text-ink-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                            <template x-for="notification in items" :key="notification.id">
+                                <a :href="notification.url" class="block px-4 py-3 hover:bg-ink-50 transition-colors">
+                                    <p class="text-[11px] text-ink-700 leading-relaxed" x-text="notification.message"></p>
+                                    <p class="text-[10px] text-ink-400 mt-1" x-text="notification.created_at"></p>
                                 </a>
-                            @empty
-                                <p class="px-4 py-6 text-[11px] text-ink-400 text-center">{{ __('No new notifications.') }}</p>
-                            @endforelse
+                            </template>
+                            <p x-show="items.length === 0" class="px-4 py-6 text-[11px] text-ink-400 text-center">{{ __('No new notifications.') }}</p>
                         </div>
                     </div>
                 </div>

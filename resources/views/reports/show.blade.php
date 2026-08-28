@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="space-y-6 max-w-3xl">
+    <div class="space-y-6 max-w-6xl">
         <div class="flex items-center justify-between">
             <h1 class="text-xl font-bold text-ink-900">{{ __('Humanitarian Impact Report') }}</h1>
             <div class="flex items-center gap-2">

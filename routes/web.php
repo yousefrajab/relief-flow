@@ -91,6 +91,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/notifications/read-all', function () {
             Auth::user()->unreadNotifications->markAsRead();
 
+            if (request()->wantsJson()) {
+                return response()->json(['status' => 'ok']);
+            }
+
             return redirect()->back();
         })->name('notifications.read-all');
 
@@ -100,6 +104,20 @@ Route::middleware('auth')->group(function () {
 
             return redirect()->to($notification->data['url'] ?? route('dashboard'));
         })->name('notifications.read');
+
+        Route::get('/notifications/poll', function () {
+            $unread = Auth::user()->unreadNotifications;
+
+            return response()->json([
+                'count' => $unread->count(),
+                'items' => $unread->take(8)->map(fn ($notification) => [
+                    'id' => $notification->id,
+                    'message' => $notification->data['message'] ?? '',
+                    'url' => route('notifications.read', $notification->id),
+                    'created_at' => $notification->created_at->diffForHumans(),
+                ])->values(),
+            ]);
+        })->name('notifications.poll');
 
         Route::middleware('admin')->group(function () {
             Route::post('/warehouses', [WarehouseController::class, 'store'])->name('warehouses.store');

@@ -9,7 +9,7 @@
      style="display: none;">
     <div x-show="open" x-transition.opacity x-on:click="open = false" class="absolute inset-0 bg-ink-950/60 backdrop-blur-sm"></div>
 
-    <div x-show="open" x-transition x-on:click.away="open = false" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div x-show="open" x-transition x-on:click.away="open = false" class="relative bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between px-6 py-4 border-b border-ink-100">
             <h3 class="text-sm font-bold text-ink-900">{{ $title }}</h3>
             <button type="button" x-on:click="open = false" class="text-ink-400 hover:text-ink-700">

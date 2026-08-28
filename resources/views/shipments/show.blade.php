@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="space-y-6 max-w-2xl">
+    <div class="space-y-6 max-w-4xl">
         <div>
             <a href="{{ route('aid-requests.show', $shipment->aidRequest) }}" class="text-[11px] font-bold text-ink-400 hover:text-ink-700">&larr; {{ __('Aid Request') }}</a>
             <div class="flex flex-wrap items-start justify-between gap-3 mt-1">

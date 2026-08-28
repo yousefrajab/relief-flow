@@ -138,4 +138,28 @@ class NotificationsTest extends TestCase
 
         $this->assertNotNull($user->notifications()->first()->read_at);
     }
+
+    public function test_notification_poll_endpoint_returns_unread_count_and_items(): void
+    {
+        $user = User::factory()->coordinator()->create();
+        $user->notify(new AccountApprovedNotification);
+
+        $response = $this->actingAs($user)->getJson('/notifications/poll');
+
+        $response->assertOk();
+        $response->assertJsonStructure(['count', 'items' => [['id', 'message', 'url', 'created_at']]]);
+        $response->assertJsonPath('count', 1);
+    }
+
+    public function test_mark_all_read_via_ajax_returns_json_without_redirect(): void
+    {
+        $user = User::factory()->coordinator()->create();
+        $user->notify(new AccountApprovedNotification);
+
+        $response = $this->actingAs($user)->postJson('/notifications/read-all');
+
+        $response->assertOk();
+        $response->assertJson(['status' => 'ok']);
+        $this->assertSame(0, $user->unreadNotifications()->count());
+    }
 }
