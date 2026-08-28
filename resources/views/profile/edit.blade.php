@@ -2,7 +2,7 @@
     <div class="space-y-6 max-w-4xl">
         <h1 class="text-xl font-bold text-ink-900">{{ __('Profile') }}</h1>
 
-        <div class="bg-gradient-to-br from-field-600 to-field-600 rounded-3xl p-6 flex items-center gap-4">
+        <div class="bg-gradient-to-br from-field-600 to-field-800 rounded-3xl p-6 flex items-center gap-4">
             <div class="w-16 h-16 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-white font-extrabold text-2xl shrink-0 overflow-hidden">
                 @if($user->avatar_url)
                     <img src="{{ $user->avatar_url }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
