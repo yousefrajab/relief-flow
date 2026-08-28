@@ -76,6 +76,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/push/subscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
         Route::get('/reports', [ReportController::class, 'show'])->name('reports.show');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+        Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
 
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -102,6 +103,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/shipments/{shipment}/pickup', [ShipmentController::class, 'confirmPickup'])->name('shipments.pickup');
         Route::post('/shipments/{shipment}/deliver', [ShipmentController::class, 'deliver'])->name('shipments.deliver');
         Route::get('/shipments/{shipment}/print', [ShipmentController::class, 'print'])->name('shipments.print');
+        Route::get('/shipments/{shipment}/receipt', [ShipmentController::class, 'receipt'])->name('shipments.receipt');
 
         Route::post('/notifications/read-all', function () {
             Auth::user()->unreadNotifications->markAsRead();

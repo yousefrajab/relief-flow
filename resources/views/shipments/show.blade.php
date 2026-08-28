@@ -78,7 +78,10 @@
 
         @if($shipment->status === 'delivered')
             <div class="bg-field-50 border border-field-200 rounded-2xl p-6 space-y-3">
-                <p class="text-xs font-bold text-field-800">{{ __('Delivered') }} {{ $shipment->delivered_at->diffForHumans() }}</p>
+                <div class="flex items-center justify-between gap-3">
+                    <p class="text-xs font-bold text-field-800">{{ __('Delivered') }} {{ $shipment->delivered_at->diffForHumans() }}</p>
+                    <a href="{{ route('shipments.receipt', $shipment) }}" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-field-700 hover:text-field-800 shrink-0"><x-icon name="download" class="w-3.5 h-3.5" /> {{ __('Download Receipt') }}</a>
+                </div>
 
                 @if($shipment->delivery_photo_path)
                     <img src="{{ asset('storage/'.$shipment->delivery_photo_path) }}" class="rounded-xl border border-field-200 max-h-64 object-cover">
