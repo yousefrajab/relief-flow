@@ -93,6 +93,7 @@
                                     'submitted' => __('submitted this request'),
                                     'rejected' => __('rejected this request'),
                                     'dispatched' => __('dispatched a shipment'),
+                                    'picked_up' => __('confirmed pickup from warehouse'),
                                     'delivered' => __('confirmed delivery'),
                                     default => $activity->action,
                                 } }}

@@ -26,10 +26,19 @@ class ShipmentFactory extends Factory
         ];
     }
 
+    public function pickedUp(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'picked_up',
+            'picked_up_at' => now(),
+        ]);
+    }
+
     public function delivered(): static
     {
         return $this->state(fn (array $attributes) => [
             'status' => 'delivered',
+            'picked_up_at' => now()->subHour(),
             'delivered_at' => now(),
         ]);
     }

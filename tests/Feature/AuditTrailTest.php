@@ -77,7 +77,7 @@ class AuditTrailTest extends TestCase
     {
         $coordinator = User::factory()->coordinator()->create();
         $aidRequest = AidRequest::factory()->for($coordinator)->dispatched()->create();
-        $shipment = \App\Models\Shipment::factory()->for($aidRequest, 'aidRequest')->create();
+        $shipment = \App\Models\Shipment::factory()->pickedUp()->for($aidRequest, 'aidRequest')->create();
 
         $this->actingAs($coordinator)->post("/shipments/{$shipment->id}/deliver");
 
@@ -110,6 +110,7 @@ class AuditTrailTest extends TestCase
         ]);
 
         $shipment = $aidRequest->fresh()->shipment;
+        $this->actingAs($driver)->post("/shipments/{$shipment->id}/pickup");
         $this->actingAs($coordinator)->post("/shipments/{$shipment->id}/deliver");
 
         $response = $this->actingAs($admin)->withSession(['locale' => 'en'])->get("/aid-requests/{$aidRequest->id}");
@@ -118,6 +119,7 @@ class AuditTrailTest extends TestCase
         $response->assertSeeInOrder([
             'submitted this request',
             'dispatched a shipment',
+            'confirmed pickup from warehouse',
             'confirmed delivery',
         ]);
     }

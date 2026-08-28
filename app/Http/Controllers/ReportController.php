@@ -71,7 +71,7 @@ class ReportController extends Controller
 
         return [
             'delivered_count' => Shipment::where('status', 'delivered')->count(),
-            'active_count' => Shipment::where('status', 'dispatched')->count(),
+            'active_count' => Shipment::whereIn('status', ['dispatched', 'picked_up'])->count(),
             'warehouse_count' => Warehouse::where('status', 'active')->count(),
             'pending_count' => AidRequest::where('status', 'pending')->count(),
             'rejected_count' => AidRequest::where('status', 'rejected')->count(),

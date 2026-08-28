@@ -134,7 +134,7 @@ class AidRequestLifecycleTest extends TestCase
     {
         $coordinator = User::factory()->coordinator()->create();
         $aidRequest = AidRequest::factory()->for($coordinator)->dispatched()->create();
-        $shipment = \App\Models\Shipment::factory()->for($aidRequest, 'aidRequest')->create();
+        $shipment = \App\Models\Shipment::factory()->pickedUp()->for($aidRequest, 'aidRequest')->create();
 
         $response = $this->actingAs($coordinator)->post("/shipments/{$shipment->id}/deliver");
 
@@ -149,12 +149,12 @@ class AidRequestLifecycleTest extends TestCase
         $owner = User::factory()->coordinator()->create();
         $stranger = User::factory()->coordinator()->create();
         $aidRequest = AidRequest::factory()->for($owner)->dispatched()->create();
-        $shipment = \App\Models\Shipment::factory()->for($aidRequest, 'aidRequest')->create();
+        $shipment = \App\Models\Shipment::factory()->pickedUp()->for($aidRequest, 'aidRequest')->create();
 
         $response = $this->actingAs($stranger)->post("/shipments/{$shipment->id}/deliver");
 
         $response->assertForbidden();
-        $this->assertSame('dispatched', $shipment->fresh()->status);
+        $this->assertSame('picked_up', $shipment->fresh()->status);
     }
 
     public function test_admin_can_confirm_delivery_on_behalf_of_any_request(): void
@@ -162,7 +162,7 @@ class AidRequestLifecycleTest extends TestCase
         $admin = User::factory()->admin()->create();
         $coordinator = User::factory()->coordinator()->create();
         $aidRequest = AidRequest::factory()->for($coordinator)->dispatched()->create();
-        $shipment = \App\Models\Shipment::factory()->for($aidRequest, 'aidRequest')->create();
+        $shipment = \App\Models\Shipment::factory()->pickedUp()->for($aidRequest, 'aidRequest')->create();
 
         $response = $this->actingAs($admin)->post("/shipments/{$shipment->id}/deliver");
 

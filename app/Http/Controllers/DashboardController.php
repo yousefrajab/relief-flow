@@ -31,7 +31,7 @@ class DashboardController extends Controller
             'totalWarehouses' => Warehouse::count(),
             'totalItems' => Item::count(),
             'pendingRequests' => AidRequest::where('status', 'pending')->count(),
-            'activeShipments' => Shipment::where('status', 'dispatched')->count(),
+            'activeShipments' => Shipment::whereIn('status', ['dispatched', 'picked_up'])->count(),
             'pendingUsersCount' => User::where('status', 'pending_verification')->count(),
             'lowStockAlerts' => Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->limit(6)->get(),
             'recentRequests' => AidRequest::with(['requestItems.item', 'user'])->orderBy('id', 'desc')->limit(5)->get(),
@@ -42,7 +42,7 @@ class DashboardController extends Controller
     {
         return view('dashboards.depot-manager', [
             'pendingRequestsCount' => AidRequest::where('status', 'pending')->count(),
-            'dispatchedCount' => Shipment::where('status', 'dispatched')->count(),
+            'dispatchedCount' => Shipment::whereIn('status', ['dispatched', 'picked_up'])->count(),
             'lowStockAlerts' => Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->limit(6)->get(),
             'pendingRequests' => AidRequest::with(['requestItems.item', 'user'])
                 ->where('status', 'pending')
@@ -57,7 +57,7 @@ class DashboardController extends Controller
         return view('dashboards.driver', [
             'activeDeliveries' => Shipment::with(['aidRequest', 'warehouse'])
                 ->where('driver_user_id', $user->id)
-                ->where('status', 'dispatched')
+                ->whereIn('status', ['dispatched', 'picked_up'])
                 ->orderBy('id', 'desc')
                 ->get(),
             'deliveredCount' => Shipment::where('driver_user_id', $user->id)->where('status', 'delivered')->count(),
@@ -77,7 +77,7 @@ class DashboardController extends Controller
             'myPendingCount' => AidRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
             'myShipmentsAwaitingDelivery' => Shipment::with(['aidRequest', 'warehouse'])
                 ->whereHas('aidRequest', fn ($query) => $query->where('user_id', $user->id))
-                ->where('status', 'dispatched')
+                ->where('status', 'picked_up')
                 ->orderBy('id', 'desc')
                 ->get(),
             'recentRequests' => AidRequest::with(['requestItems.item', 'shipment'])

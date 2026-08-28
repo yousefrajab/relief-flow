@@ -12,6 +12,7 @@ use App\Notifications\AidRequestRejectedNotification;
 use App\Notifications\AidRequestSubmittedNotification;
 use App\Notifications\ShipmentDeliveredNotification;
 use App\Notifications\ShipmentDispatchedNotification;
+use App\Notifications\ShipmentPickedUpNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
@@ -117,11 +118,25 @@ class NotificationsTest extends TestCase
         $admin = User::factory()->admin()->create();
         $coordinator = User::factory()->coordinator()->create();
         $aidRequest = AidRequest::factory()->for($coordinator)->dispatched()->create();
-        $shipment = \App\Models\Shipment::factory()->for($aidRequest, 'aidRequest')->create();
+        $shipment = \App\Models\Shipment::factory()->pickedUp()->for($aidRequest, 'aidRequest')->create();
 
         $this->actingAs($coordinator)->post("/shipments/{$shipment->id}/deliver");
 
         Notification::assertSentTo($admin, ShipmentDeliveredNotification::class);
+    }
+
+    public function test_pickup_notifies_active_staff(): void
+    {
+        Notification::fake();
+
+        $admin = User::factory()->admin()->create();
+        $driver = User::factory()->driver()->create();
+        $aidRequest = AidRequest::factory()->dispatched()->create();
+        $shipment = \App\Models\Shipment::factory()->for($aidRequest, 'aidRequest')->create(['driver_user_id' => $driver->id]);
+
+        $this->actingAs($driver)->post("/shipments/{$shipment->id}/pickup");
+
+        Notification::assertSentTo($admin, ShipmentPickedUpNotification::class);
     }
 
     public function test_notification_bell_shows_unread_count_and_marking_read_redirects(): void

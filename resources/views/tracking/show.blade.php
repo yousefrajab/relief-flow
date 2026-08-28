@@ -27,12 +27,20 @@
                 <img src="{{ $qrCode }}" alt="QR" class="w-16 h-16 rounded-lg bg-white p-1">
             </div>
 
-            <div class="flex items-center gap-3 text-[11px] font-bold">
+            @php
+                $stageOrder = ['dispatched' => 0, 'picked_up' => 1, 'delivered' => 2];
+                $currentStage = $stageOrder[$shipment->status] ?? 0;
+            @endphp
+            <div class="flex items-center gap-2 text-[11px] font-bold">
                 <div class="flex items-center gap-1.5 text-field-400">
                     <span class="w-2 h-2 rounded-full bg-current"></span> {{ __('Dispatched') }}
                 </div>
                 <div class="flex-grow h-px bg-white/10"></div>
-                <div class="flex items-center gap-1.5 {{ $shipment->status === 'delivered' ? 'text-field-400' : 'text-ink-500' }}">
+                <div class="flex items-center gap-1.5 {{ $currentStage >= 1 ? 'text-field-400' : 'text-ink-500' }}">
+                    <span class="w-2 h-2 rounded-full bg-current"></span> {{ __('In Transit') }}
+                </div>
+                <div class="flex-grow h-px bg-white/10"></div>
+                <div class="flex items-center gap-1.5 {{ $currentStage >= 2 ? 'text-field-400' : 'text-ink-500' }}">
                     <span class="w-2 h-2 rounded-full bg-current"></span> {{ __('Delivered') }}
                 </div>
             </div>
@@ -53,8 +61,14 @@
                 <div>
                     <p class="text-ink-400 font-semibold">{{ __('Status') }}</p>
                     <p class="font-bold text-white mt-0.5">
-                        {{ $shipment->status === 'delivered' ? __('Delivered') : __('Dispatched') }}
-                        @if($shipment->status === 'delivered')
+                        {{ match($shipment->status) {
+                            'picked_up' => __('In Transit'),
+                            'delivered' => __('Delivered'),
+                            default => __('Dispatched'),
+                        } }}
+                        @if($shipment->status === 'picked_up')
+                            · {{ $shipment->picked_up_at->diffForHumans() }}
+                        @elseif($shipment->status === 'delivered')
                             · {{ $shipment->delivered_at->diffForHumans() }}
                         @endif
                     </p>
