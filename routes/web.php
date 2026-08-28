@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DriverLocationController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\MapController;
@@ -62,6 +63,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/assistant/ask', [AssistantController::class, 'ask'])->name('assistant.ask');
         Route::get('/help', fn () => view('help'))->name('help');
         Route::get('/map', [MapController::class, 'show'])->name('map.show');
+        Route::get('/map/drivers', [MapController::class, 'drivers'])->name('map.drivers');
+        Route::post('/driver/location', [DriverLocationController::class, 'update'])->name('driver.location.update');
+        Route::delete('/driver/location', [DriverLocationController::class, 'destroy'])->name('driver.location.destroy');
         Route::get('/reports', [ReportController::class, 'show'])->name('reports.show');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 

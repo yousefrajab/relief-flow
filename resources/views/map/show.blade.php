@@ -5,10 +5,13 @@
             <p class="text-xs text-ink-500 mt-1">{{ __('Warehouses and open field requests.') }}</p>
         </div>
 
-        <div class="flex items-center gap-4 text-[11px] font-bold">
+        <div class="flex items-center gap-4 text-[11px] font-bold flex-wrap">
             <span class="flex items-center gap-1.5 text-field-600"><span class="w-2.5 h-2.5 rounded-full bg-field-500"></span> {{ __('Warehouses') }}</span>
             <span class="flex items-center gap-1.5 text-amber-alert-600"><span class="w-2.5 h-2.5 rounded-full bg-amber-alert-500"></span> {{ __('Pending Requests') }}</span>
             <span class="flex items-center gap-1.5 text-sky-600"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> {{ __('Dispatched') }}</span>
+            @if($canSeeDrivers)
+                <span class="flex items-center gap-1.5 text-violet-600"><span class="w-2.5 h-2.5 rounded-full bg-violet-500"></span> {{ __('Drivers (live)') }}</span>
+            @endif
         </div>
 
         <div id="overview-map" style="height: 480px;" class="rounded-2xl border border-ink-200 relative z-0"></div>
@@ -40,6 +43,44 @@
             if (bounds.length > 0) {
                 map.fitBounds(bounds, { padding: [40, 40] });
             }
+
+            @if($canSeeDrivers)
+                var driverIcon = L.divIcon({ className: '', html: '<div style="width:16px;height:16px;border-radius:50%;background:#7c3aed;border:2px solid white;box-shadow:0 0 0 1px #7c3aed"></div>' });
+                var driverMarkers = {};
+
+                function pollDrivers() {
+                    fetch('{{ route('map.drivers') }}', { headers: { 'Accept': 'application/json' } })
+                        .then(function (response) { return response.ok ? response.json() : { drivers: [] }; })
+                        .then(function (data) {
+                            var seen = {};
+                            (data.drivers || []).forEach(function (driver) {
+                                seen[driver.id] = true;
+                                var latlng = [driver.latitude, driver.longitude];
+                                var popupText = driver.name + ' — ' + driver.updated_at;
+
+                                if (driverMarkers[driver.id]) {
+                                    driverMarkers[driver.id].setLatLng(latlng);
+                                    driverMarkers[driver.id].setPopupContent(popupText);
+                                } else {
+                                    driverMarkers[driver.id] = L.marker(latlng, { icon: driverIcon }).addTo(map).bindPopup(popupText);
+                                }
+                            });
+
+                            Object.keys(driverMarkers).forEach(function (id) {
+                                if (!seen[id]) {
+                                    map.removeLayer(driverMarkers[id]);
+                                    delete driverMarkers[id];
+                                }
+                            });
+                        })
+                        .catch(function () {
+                            // A missed poll is retried automatically on the next interval.
+                        });
+                }
+
+                pollDrivers();
+                setInterval(pollDrivers, 15000);
+            @endif
         });
     </script>
 </x-app-layout>
