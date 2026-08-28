@@ -4,7 +4,8 @@
             <h1 class="text-xl font-bold text-ink-900">{{ __('Humanitarian Impact Report') }}</h1>
             <div class="flex items-center gap-2">
                 <a href="{{ route('reports.export') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-ink-200 hover:border-ink-300 text-ink-700 text-xs font-bold"><x-icon name="chart" class="w-4 h-4" /> {{ __('Export CSV') }}</a>
-                <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold">{{ __('Print / Save as PDF') }}</button>
+                <button onclick="window.print()" class="px-4 py-2 rounded-xl bg-white border border-ink-200 hover:border-ink-300 text-ink-700 text-xs font-bold">{{ __('Print / Save as PDF') }}</button>
+                <a href="{{ route('reports.export-pdf') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-field-600 hover:bg-field-700 text-white text-xs font-bold"><x-icon name="download" class="w-4 h-4" /> {{ __('Download PDF') }}</a>
             </div>
         </div>
 

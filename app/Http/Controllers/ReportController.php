@@ -6,7 +6,9 @@ use App\Models\AidRequest;
 use App\Models\Shipment;
 use App\Models\Warehouse;
 use App\Services\AIService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Contracts\View\View;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -57,6 +59,20 @@ class ReportController extends Controller
 
             fclose($handle);
         }, $filename, ['Content-Type' => 'text/csv']);
+    }
+
+    public function exportPdf(AIService $aiService): Response
+    {
+        abort_unless(in_array(auth()->user()->role, ['admin', 'depot_manager']), 403);
+
+        $stats = $this->buildStats();
+        $weeklyTrend = $this->buildWeeklyTrend();
+        $narrative = $aiService->generateImpactReport($stats);
+        $filename = 'impact-report-'.now()->format('Y-m-d').'.pdf';
+
+        return Pdf::loadView('reports.pdf', compact('stats', 'narrative', 'weeklyTrend'))
+            ->setPaper('a4')
+            ->download($filename);
     }
 
     private function buildStats(): array

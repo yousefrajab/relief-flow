@@ -29,4 +29,24 @@ class ReportExportTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_admin_can_export_the_impact_report_as_pdf(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $response = $this->actingAs($admin)->get('/reports/export-pdf');
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+    }
+
+    public function test_coordinator_cannot_export_the_impact_report_as_pdf(): void
+    {
+        $coordinator = User::factory()->coordinator()->create();
+
+        $response = $this->actingAs($coordinator)->get('/reports/export-pdf');
+
+        $response->assertForbidden();
+    }
 }

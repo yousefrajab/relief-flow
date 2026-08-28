@@ -9,11 +9,13 @@ use App\Notifications\ShipmentDeliveredNotification;
 use App\Notifications\ShipmentPickedUpNotification;
 use App\Services\AIService;
 use App\Services\QrCodeService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class ShipmentController extends Controller
 {
@@ -123,6 +125,19 @@ class ShipmentController extends Controller
             'shipment' => $shipment,
             'qrCode' => $qrCodeService->dataUri($shipment->qr_code_token),
         ]);
+    }
+
+    public function receipt(Shipment $shipment): Response
+    {
+        $this->authorize('view', $shipment);
+
+        abort_unless($shipment->status === 'delivered', 404);
+
+        $shipment->load(['aidRequest.requestItems.item', 'aidRequest.user', 'warehouse']);
+
+        return Pdf::loadView('shipments.receipt', compact('shipment'))
+            ->setPaper('a4')
+            ->download("delivery-receipt-{$shipment->qr_code_token}.pdf");
     }
 
     public function track(string $token, QrCodeService $qrCodeService): View
