@@ -102,6 +102,24 @@ class AIAssistantTest extends TestCase
         $response->assertJsonPath('reply', 'No shipment found with that tracking token, or you do not have access to it.');
     }
 
+    public function test_shipment_tracking_bypasses_the_llm_even_when_a_real_api_key_is_configured(): void
+    {
+        config(['services.openai.key' => 'fake-test-key']);
+        \Illuminate\Support\Facades\Http::fake();
+
+        $coordinator = User::factory()->coordinator()->create();
+        $aidRequest = AidRequest::factory()->for($coordinator)->dispatched()->create(['location' => 'Rafah Crossing']);
+        Shipment::factory()->for($aidRequest, 'aidRequest')->create(['qr_code_token' => 'RF-ABC12345']);
+
+        $response = $this->actingAs($coordinator)->withSession(['locale' => 'en'])->postJson('/assistant/ask', [
+            'message' => 'where is RF-ABC12345',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('reply', fn ($reply) => str_contains($reply, 'RF-ABC12345') && str_contains($reply, 'Rafah Crossing'));
+        \Illuminate\Support\Facades\Http::assertNothingSent();
+    }
+
     public function test_unrecognized_question_gets_a_helpful_fallback(): void
     {
         $admin = User::factory()->admin()->create();

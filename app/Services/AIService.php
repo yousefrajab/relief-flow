@@ -159,6 +159,13 @@ class AIService
 
     public function answerAssistantQuestion(string $question, User $user): string
     {
+        // A tracking token is looked up directly and permission-checked here, in both
+        // real and simulated modes — the LLM snapshot never includes other users' shipment
+        // details, so it could never answer this on its own even when enabled.
+        if (preg_match('/RF-[A-Z0-9]{6,}/i', $question, $matches)) {
+            return $this->lookupShipmentByToken($matches[0], $user);
+        }
+
         if (! $this->enabled()) {
             return $this->simulateAssistantAnswer($question, $user);
         }
@@ -225,10 +232,6 @@ class AIService
     {
         $normalized = mb_strtolower(trim($question));
 
-        if (preg_match('/RF-[A-Z0-9]{6,}/i', $question, $matches)) {
-            return $this->simulateShipmentLookup($matches[0], $user);
-        }
-
         $intents = match ($user->role) {
             'admin', 'depot_manager' => [
                 [['طلب', 'معلق', 'pending request'], fn () => __(':count aid request(s) are currently pending review.', ['count' => AidRequest::where('status', 'pending')->count()])],
@@ -256,7 +259,7 @@ class AIService
         return $this->simulateFallbackAnswer($user);
     }
 
-    private function simulateShipmentLookup(string $token, User $user): string
+    private function lookupShipmentByToken(string $token, User $user): string
     {
         $shipment = Shipment::with('aidRequest')->where('qr_code_token', strtoupper($token))->first();
 
