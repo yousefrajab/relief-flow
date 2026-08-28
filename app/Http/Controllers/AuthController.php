@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Services\TwoFactorService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -21,11 +23,25 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        $throttleKey = Str::lower($credentials['email']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            return back()->withErrors([
+                'email' => __('Too many login attempts. Please try again in :seconds seconds.', [
+                    'seconds' => RateLimiter::availableIn($throttleKey),
+                ]),
+            ])->onlyInput('email');
+        }
+
         if (! Auth::validate($credentials)) {
+            RateLimiter::hit($throttleKey, 60);
+
             return back()->withErrors([
                 'email' => __('These credentials do not match our records.'),
             ])->onlyInput('email');
         }
+
+        RateLimiter::clear($throttleKey);
 
         $user = User::where('email', $credentials['email'])->first();
 
