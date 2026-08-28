@@ -20,7 +20,7 @@
         </div>
 
         @if($warehouse->latitude && $warehouse->longitude)
-            <div id="warehouse-map" style="height: 280px;" class="rounded-2xl border border-ink-200"></div>
+            <div id="warehouse-map" style="height: 280px;" class="rounded-2xl border border-ink-200 relative z-0"></div>
         @endif
 
         <div class="grid grid-cols-2 gap-4">

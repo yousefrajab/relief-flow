@@ -21,7 +21,7 @@
                 this.marker.setLatLng(e.latlng);
                 this.setPosition(e.latlng.lat, e.latlng.lng);
             });
-            setTimeout(() => this.map.invalidateSize(), 200);
+            new ResizeObserver(() => this.map.invalidateSize()).observe(this.$refs.mapEl);
         },
         setPosition(lat, lng) {
             this.lat = lat;

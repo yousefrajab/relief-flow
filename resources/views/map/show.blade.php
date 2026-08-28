@@ -11,7 +11,7 @@
             <span class="flex items-center gap-1.5 text-sky-600"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> {{ __('Dispatched') }}</span>
         </div>
 
-        <div id="overview-map" style="height: 480px;" class="rounded-2xl border border-ink-200"></div>
+        <div id="overview-map" style="height: 480px;" class="rounded-2xl border border-ink-200 relative z-0"></div>
     </div>
 
     <script>
