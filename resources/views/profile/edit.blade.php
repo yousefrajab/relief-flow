@@ -87,6 +87,61 @@
                     </form>
                 </div>
 
+                <div
+                    class="bg-white border border-ink-100 rounded-2xl p-6 flex items-center justify-between gap-4"
+                    x-data="{
+                        enabled: false,
+                        status: 'idle',
+                        async init() {
+                            if (!window.ReliefFlowPush.pushSupported()) {
+                                this.status = 'unsupported';
+                                return;
+                            }
+                            const sub = await window.ReliefFlowPush.currentPushSubscription();
+                            this.enabled = !!sub;
+                        },
+                        async toggle() {
+                            this.status = 'loading';
+                            try {
+                                if (this.enabled) {
+                                    await window.ReliefFlowPush.unsubscribeFromPush();
+                                    this.enabled = false;
+                                } else {
+                                    await window.ReliefFlowPush.subscribeToPush();
+                                    this.enabled = true;
+                                }
+                                this.status = 'idle';
+                            } catch (e) {
+                                this.status = 'error';
+                            }
+                        },
+                    }"
+                >
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" :class="enabled ? 'bg-field-50 text-field-600' : 'bg-ink-100 text-ink-400'">
+                            <x-icon name="bell" class="w-5 h-5" />
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-ink-900">{{ __('Push Notifications') }}</p>
+                            <p class="text-[11px] text-ink-500 mt-0.5" x-show="status !== 'unsupported'">{{ __('Get notified on this device even when ReliefFlow is closed.') }}</p>
+                            <p class="text-[11px] text-ink-400 mt-0.5" x-show="status === 'unsupported'" x-cloak>{{ __('Not supported on this browser or device.') }}</p>
+                            <p class="text-[11px] text-rose-600 mt-0.5" x-show="status === 'error'" x-cloak>{{ __('Could not enable notifications. Check your browser permissions.') }}</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        x-on:click="toggle()"
+                        x-show="status !== 'unsupported'"
+                        :disabled="status === 'loading'"
+                        role="switch"
+                        :aria-checked="enabled.toString()"
+                        class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors"
+                        :class="enabled ? 'bg-field-600' : 'bg-ink-200'"
+                    >
+                        <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform" :class="enabled ? 'translate-x-6 rtl:-translate-x-6' : 'translate-x-0.5'"></span>
+                    </button>
+                </div>
+
                 <div class="bg-white border border-ink-100 rounded-2xl p-6">
                     <div class="flex items-center gap-2 mb-4">
                         <div class="w-8 h-8 rounded-lg bg-amber-alert-50 text-amber-alert-600 flex items-center justify-center"><x-icon name="shield-check" class="w-4 h-4" /></div>

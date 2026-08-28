@@ -1,5 +1,6 @@
 import './bootstrap';
 import { submitFormOrQueue, syncQueue } from './offline-queue';
+import { pushSupported, currentPushSubscription, subscribeToPush, unsubscribeFromPush } from './push-notifications';
 import Alpine from 'alpinejs';
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -43,6 +44,7 @@ window.L = L;
 window.Chart = Chart;
 window.Alpine = Alpine;
 window.ReliefFlowOffline = { submitFormOrQueue, syncQueue };
+window.ReliefFlowPush = { pushSupported, currentPushSubscription, subscribeToPush, unsubscribeFromPush };
 Alpine.start();
 
 if ('serviceWorker' in navigator) {

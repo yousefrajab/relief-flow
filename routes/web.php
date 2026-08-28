@@ -13,6 +13,7 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\WarehouseController;
@@ -71,6 +72,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/map/drivers', [MapController::class, 'drivers'])->name('map.drivers');
         Route::post('/driver/location', [DriverLocationController::class, 'update'])->name('driver.location.update');
         Route::delete('/driver/location', [DriverLocationController::class, 'destroy'])->name('driver.location.destroy');
+        Route::post('/push/subscribe', [PushSubscriptionController::class, 'store'])->name('push.subscribe');
+        Route::delete('/push/subscribe', [PushSubscriptionController::class, 'destroy'])->name('push.unsubscribe');
         Route::get('/reports', [ReportController::class, 'show'])->name('reports.show');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
 
