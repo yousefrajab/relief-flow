@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>ReliefFlow — {{ $title ?? __('Dashboard') }}</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1f9a79">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     @include('partials.theme-init')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -169,6 +172,8 @@
             </div>
 
             <div class="p-5 md:p-8 max-w-7xl mx-auto space-y-6">
+                <x-offline-banner />
+
                 @if(session('success'))
                     <div class="bg-field-50 border border-field-200 text-field-800 text-xs font-bold rounded-2xl px-4 py-3">
                         {{ session('success') }}

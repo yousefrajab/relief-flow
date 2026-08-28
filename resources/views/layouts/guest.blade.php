@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReliefFlow</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1f9a79">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>[x-cloak] { display: none !important; }</style>
