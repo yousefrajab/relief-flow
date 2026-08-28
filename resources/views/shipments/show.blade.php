@@ -40,6 +40,42 @@
             <a href="{{ route('shipments.print', $shipment) }}" target="_blank" class="inline-flex items-center gap-1.5 text-[11px] font-bold text-field-600 hover:text-field-700"><x-icon name="qr" class="w-3.5 h-3.5" /> {{ __('Print Manifest') }} &rarr;</a>
         </div>
 
+        @if($shipment->picked_up_at)
+            <div class="bg-violet-50 border border-violet-200 rounded-2xl p-6 space-y-3">
+                <p class="text-xs font-bold text-violet-800">{{ __('Picked up from warehouse') }} {{ $shipment->picked_up_at->diffForHumans() }}</p>
+
+                @if($shipment->pickup_photo_path)
+                    <img src="{{ asset('storage/'.$shipment->pickup_photo_path) }}" class="rounded-xl border border-violet-200 max-h-64 object-cover">
+                @endif
+
+                @if($shipment->pickup_ai_verification_status)
+                    <div class="flex items-center gap-2">
+                        <x-status-badge :status="$shipment->pickup_ai_verification_status" />
+                        @if($shipment->pickup_ai_verification_notes)
+                            <p class="text-[11px] text-violet-700">{{ $shipment->pickup_ai_verification_notes }}</p>
+                        @endif
+                    </div>
+                @endif
+            </div>
+        @elseif(auth()->user()->can('confirmPickup', $shipment))
+            <div class="bg-white border border-ink-100 rounded-2xl p-6 space-y-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center"><x-icon name="camera" class="w-4 h-4" /></div>
+                    <h2 class="text-sm font-bold text-ink-900">{{ __('Confirm Pickup from Warehouse') }}</h2>
+                </div>
+                <p class="text-[11px] text-ink-500">{{ __('Confirm you have collected this shipment from the warehouse. Optionally attach a photo of the load — our AI will do a quick plausibility check against the manifest.') }}</p>
+                <form method="POST" action="{{ route('shipments.pickup', $shipment) }}" enctype="multipart/form-data" class="space-y-4">
+                    @csrf
+                    <div>
+                        <x-input-label :value="__('Pickup photo (optional)')" />
+                        <input type="file" name="pickup_photo" accept="image/*" class="block w-full text-xs text-ink-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-violet-50 file:text-violet-700 file:text-xs file:font-bold">
+                        <x-input-error :messages="$errors->get('pickup_photo')" />
+                    </div>
+                    <x-primary-button class="w-full justify-center">{{ __('Confirm Pickup') }}</x-primary-button>
+                </form>
+            </div>
+        @endif
+
         @if($shipment->status === 'delivered')
             <div class="bg-field-50 border border-field-200 rounded-2xl p-6 space-y-3">
                 <p class="text-xs font-bold text-field-800">{{ __('Delivered') }} {{ $shipment->delivered_at->diffForHumans() }}</p>

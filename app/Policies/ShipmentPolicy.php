@@ -15,9 +15,19 @@ class ShipmentPolicy
             || $user->id === $shipment->driver_user_id;
     }
 
-    public function deliver(User $user, Shipment $shipment): bool
+    public function confirmPickup(User $user, Shipment $shipment): bool
     {
         if ($shipment->status !== 'dispatched') {
+            return false;
+        }
+
+        return $user->role === 'admin'
+            || ($user->role === 'driver' && $user->id === $shipment->driver_user_id);
+    }
+
+    public function deliver(User $user, Shipment $shipment): bool
+    {
+        if ($shipment->status !== 'picked_up') {
             return false;
         }
 

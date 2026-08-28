@@ -17,6 +17,10 @@ class Shipment extends Model
         'driver_phone',
         'status',
         'qr_code_token',
+        'picked_up_at',
+        'pickup_photo_path',
+        'pickup_ai_verification_status',
+        'pickup_ai_verification_notes',
         'delivered_at',
         'delivery_photo_path',
         'ai_verification_status',
@@ -24,6 +28,7 @@ class Shipment extends Model
     ];
 
     protected $casts = [
+        'picked_up_at' => 'datetime',
         'delivered_at' => 'datetime',
     ];
 

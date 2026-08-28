@@ -4,6 +4,7 @@
     $styles = match($status) {
         'pending' => 'bg-amber-alert-50 text-amber-alert-700 border-amber-alert-200',
         'dispatched' => 'bg-sky-50 text-sky-700 border-sky-200',
+        'picked_up' => 'bg-violet-50 text-violet-700 border-violet-200',
         'delivered' => 'bg-field-50 text-field-700 border-field-200',
         'rejected' => 'bg-rose-50 text-rose-700 border-rose-200',
         'active' => 'bg-field-50 text-field-700 border-field-200',
@@ -21,6 +22,7 @@
     $labels = [
         'pending' => __('Pending'),
         'dispatched' => __('Dispatched'),
+        'picked_up' => __('In Transit'),
         'delivered' => __('Delivered'),
         'rejected' => __('Rejected'),
         'active' => __('Active'),

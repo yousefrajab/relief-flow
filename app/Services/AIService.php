@@ -205,7 +205,7 @@ class AIService
             'admin', 'depot_manager' => [
                 'role' => $user->role,
                 'pending_aid_requests' => AidRequest::where('status', 'pending')->count(),
-                'active_shipments' => Shipment::where('status', 'dispatched')->count(),
+                'active_shipments' => Shipment::whereIn('status', ['dispatched', 'picked_up'])->count(),
                 'delivered_shipments' => Shipment::where('status', 'delivered')->count(),
                 'active_warehouses' => Warehouse::where('status', 'active')->count(),
                 'low_stock_items' => Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->get()
@@ -214,9 +214,9 @@ class AIService
             ],
             'driver' => [
                 'role' => 'driver',
-                'active_deliveries' => Shipment::where('driver_user_id', $user->id)->where('status', 'dispatched')->count(),
+                'active_deliveries' => Shipment::where('driver_user_id', $user->id)->whereIn('status', ['dispatched', 'picked_up'])->count(),
                 'delivered_count' => Shipment::where('driver_user_id', $user->id)->where('status', 'delivered')->count(),
-                'active_delivery_destinations' => Shipment::with('aidRequest')->where('driver_user_id', $user->id)->where('status', 'dispatched')->get()
+                'active_delivery_destinations' => Shipment::with('aidRequest')->where('driver_user_id', $user->id)->whereIn('status', ['dispatched', 'picked_up'])->get()
                     ->map(fn ($s) => $s->aidRequest->location)->values(),
             ],
             default => [
@@ -235,7 +235,7 @@ class AIService
         $intents = match ($user->role) {
             'admin', 'depot_manager' => [
                 [['طلب', 'معلق', 'pending request'], fn () => __(':count aid request(s) are currently pending review.', ['count' => AidRequest::where('status', 'pending')->count()])],
-                [['شحن', 'قيد التوصيل', 'ترحيل', 'active shipment', 'dispatched'], fn () => __(':count shipment(s) are currently dispatched and in transit.', ['count' => Shipment::where('status', 'dispatched')->count()])],
+                [['شحن', 'قيد التوصيل', 'ترحيل', 'active shipment', 'dispatched'], fn () => __(':count shipment(s) are currently dispatched and in transit.', ['count' => Shipment::whereIn('status', ['dispatched', 'picked_up'])->count()])],
                 [['مخزون', 'منخفض', 'low stock'], fn () => $this->simulateLowStockAnswer()],
                 [['مستودع', 'warehouse'], fn () => __(':count active warehouse(s) in the system.', ['count' => Warehouse::where('status', 'active')->count()])],
                 [['حساب', 'موافقة', 'pending account'], fn () => __(':count account(s) are awaiting approval.', ['count' => User::where('status', 'pending_verification')->count()])],
@@ -267,7 +267,11 @@ class AIService
             return __('No shipment found with that tracking token, or you do not have access to it.');
         }
 
-        $statusLabel = $shipment->status === 'delivered' ? __('Delivered') : __('Dispatched');
+        $statusLabel = match ($shipment->status) {
+            'picked_up' => __('In Transit'),
+            'delivered' => __('Delivered'),
+            default => __('Dispatched'),
+        };
 
         return __('Shipment :token is currently ":status". Destination: :location.', [
             'token' => $shipment->qr_code_token,
@@ -292,7 +296,7 @@ class AIService
     private function simulateDriverDeliveriesAnswer(User $user): string
     {
         return __('You have :active active delivery task(s) and have completed :delivered so far.', [
-            'active' => Shipment::where('driver_user_id', $user->id)->where('status', 'dispatched')->count(),
+            'active' => Shipment::where('driver_user_id', $user->id)->whereIn('status', ['dispatched', 'picked_up'])->count(),
             'delivered' => Shipment::where('driver_user_id', $user->id)->where('status', 'delivered')->count(),
         ]);
     }

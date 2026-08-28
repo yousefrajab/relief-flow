@@ -96,7 +96,7 @@ class DriverRoleTest extends TestCase
     public function test_assigned_driver_can_view_and_confirm_their_own_delivery(): void
     {
         $driver = User::factory()->driver()->create();
-        $shipment = Shipment::factory()->create(['driver_user_id' => $driver->id]);
+        $shipment = Shipment::factory()->pickedUp()->create(['driver_user_id' => $driver->id]);
 
         $viewResponse = $this->actingAs($driver)->get("/shipments/{$shipment->id}");
         $viewResponse->assertOk();

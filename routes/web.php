@@ -91,6 +91,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/aid-requests/{aidRequest}/dispatch', [AidRequestController::class, 'dispatch'])->name('aid-requests.dispatch');
 
         Route::get('/shipments/{shipment}', [ShipmentController::class, 'show'])->name('shipments.show');
+        Route::post('/shipments/{shipment}/pickup', [ShipmentController::class, 'confirmPickup'])->name('shipments.pickup');
         Route::post('/shipments/{shipment}/deliver', [ShipmentController::class, 'deliver'])->name('shipments.deliver');
         Route::get('/shipments/{shipment}/print', [ShipmentController::class, 'print'])->name('shipments.print');
 
