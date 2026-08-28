@@ -193,5 +193,7 @@
             </div>
         </main>
     </div>
+
+    <x-ai-assistant />
 </body>
 </html>

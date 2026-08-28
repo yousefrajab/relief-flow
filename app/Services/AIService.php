@@ -2,6 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\AidRequest;
+use App\Models\Inventory;
+use App\Models\Shipment;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -150,5 +155,162 @@ class AIService
         }
 
         return 'Impact report could not be generated at this time.';
+    }
+
+    public function answerAssistantQuestion(string $question, User $user): string
+    {
+        if (! $this->enabled()) {
+            return $this->simulateAssistantAnswer($question, $user);
+        }
+
+        try {
+            $response = Http::withToken($this->apiKey)
+                ->timeout(20)
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => 'gpt-4o-mini',
+                    'messages' => [
+                        [
+                            'role' => 'system',
+                            'content' => "You are the ReliefFlow assistant, helping a {$user->role} named {$user->name} with humanitarian logistics questions. Answer ONLY using the JSON snapshot of live platform data provided below — never invent numbers or shipment details, and never reveal data that is not in the snapshot. If the answer isn't in the snapshot, say you don't have that information. Keep answers to 1-3 short sentences, in the same language the user asked in.\n\nLive data snapshot:\n".json_encode($this->assistantSnapshot($user)),
+                        ],
+                        [
+                            'role' => 'user',
+                            'content' => $question,
+                        ],
+                    ],
+                ]);
+
+            $text = $response->json('choices.0.message.content');
+
+            if (! empty($text)) {
+                return $text;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('AIService::answerAssistantQuestion failed: '.$e->getMessage());
+        }
+
+        return __('The assistant could not answer that right now. Please try again.');
+    }
+
+    private function assistantSnapshot(User $user): array
+    {
+        return match ($user->role) {
+            'admin', 'depot_manager' => [
+                'role' => $user->role,
+                'pending_aid_requests' => AidRequest::where('status', 'pending')->count(),
+                'active_shipments' => Shipment::where('status', 'dispatched')->count(),
+                'delivered_shipments' => Shipment::where('status', 'delivered')->count(),
+                'active_warehouses' => Warehouse::where('status', 'active')->count(),
+                'low_stock_items' => Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->get()
+                    ->map(fn ($i) => "{$i->item->name} @ {$i->warehouse->name}: {$i->quantity}")->values(),
+                'pending_account_approvals' => User::where('status', 'pending_verification')->count(),
+            ],
+            'driver' => [
+                'role' => 'driver',
+                'active_deliveries' => Shipment::where('driver_user_id', $user->id)->where('status', 'dispatched')->count(),
+                'delivered_count' => Shipment::where('driver_user_id', $user->id)->where('status', 'delivered')->count(),
+                'active_delivery_destinations' => Shipment::with('aidRequest')->where('driver_user_id', $user->id)->where('status', 'dispatched')->get()
+                    ->map(fn ($s) => $s->aidRequest->location)->values(),
+            ],
+            default => [
+                'role' => 'coordinator',
+                'my_pending_requests' => AidRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
+                'my_dispatched_requests' => AidRequest::where('user_id', $user->id)->where('status', 'dispatched')->count(),
+                'my_delivered_requests' => AidRequest::where('user_id', $user->id)->where('status', 'delivered')->count(),
+            ],
+        };
+    }
+
+    private function simulateAssistantAnswer(string $question, User $user): string
+    {
+        $normalized = mb_strtolower(trim($question));
+
+        if (preg_match('/RF-[A-Z0-9]{6,}/i', $question, $matches)) {
+            return $this->simulateShipmentLookup($matches[0], $user);
+        }
+
+        $intents = match ($user->role) {
+            'admin', 'depot_manager' => [
+                [['طلب', 'معلق', 'pending request'], fn () => __(':count aid request(s) are currently pending review.', ['count' => AidRequest::where('status', 'pending')->count()])],
+                [['شحن', 'قيد التوصيل', 'ترحيل', 'active shipment', 'dispatched'], fn () => __(':count shipment(s) are currently dispatched and in transit.', ['count' => Shipment::where('status', 'dispatched')->count()])],
+                [['مخزون', 'منخفض', 'low stock'], fn () => $this->simulateLowStockAnswer()],
+                [['مستودع', 'warehouse'], fn () => __(':count active warehouse(s) in the system.', ['count' => Warehouse::where('status', 'active')->count()])],
+                [['حساب', 'موافقة', 'pending account'], fn () => __(':count account(s) are awaiting approval.', ['count' => User::where('status', 'pending_verification')->count()])],
+            ],
+            'driver' => [
+                [['توصيل', 'شحن', 'deliver'], fn () => $this->simulateDriverDeliveriesAnswer($user)],
+            ],
+            default => [
+                [['طلب', 'request'], fn () => $this->simulateCoordinatorRequestsAnswer($user)],
+            ],
+        };
+
+        foreach ($intents as [$keywords, $handler]) {
+            foreach ($keywords as $keyword) {
+                if (str_contains($normalized, mb_strtolower($keyword))) {
+                    return $handler();
+                }
+            }
+        }
+
+        return $this->simulateFallbackAnswer($user);
+    }
+
+    private function simulateShipmentLookup(string $token, User $user): string
+    {
+        $shipment = Shipment::with('aidRequest')->where('qr_code_token', strtoupper($token))->first();
+
+        if (! $shipment || $user->cannot('view', $shipment)) {
+            return __('No shipment found with that tracking token, or you do not have access to it.');
+        }
+
+        $statusLabel = $shipment->status === 'delivered' ? __('Delivered') : __('Dispatched');
+
+        return __('Shipment :token is currently ":status". Destination: :location.', [
+            'token' => $shipment->qr_code_token,
+            'status' => $statusLabel,
+            'location' => $shipment->aidRequest->location,
+        ]);
+    }
+
+    private function simulateLowStockAnswer(): string
+    {
+        $items = Inventory::with(['warehouse', 'item'])->where('quantity', '<', 1000)->limit(5)->get();
+
+        if ($items->isEmpty()) {
+            return __('No items are currently below the low-stock threshold.');
+        }
+
+        $list = $items->map(fn ($i) => "{$i->item->name} ({$i->warehouse->name}): ".number_format($i->quantity))->implode(', ');
+
+        return __('Low stock alert for: :items', ['items' => $list]);
+    }
+
+    private function simulateDriverDeliveriesAnswer(User $user): string
+    {
+        return __('You have :active active delivery task(s) and have completed :delivered so far.', [
+            'active' => Shipment::where('driver_user_id', $user->id)->where('status', 'dispatched')->count(),
+            'delivered' => Shipment::where('driver_user_id', $user->id)->where('status', 'delivered')->count(),
+        ]);
+    }
+
+    private function simulateCoordinatorRequestsAnswer(User $user): string
+    {
+        return __('You have :pending pending, :dispatched dispatched, and :delivered delivered request(s).', [
+            'pending' => AidRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'dispatched' => AidRequest::where('user_id', $user->id)->where('status', 'dispatched')->count(),
+            'delivered' => AidRequest::where('user_id', $user->id)->where('status', 'delivered')->count(),
+        ]);
+    }
+
+    private function simulateFallbackAnswer(User $user): string
+    {
+        $examples = match ($user->role) {
+            'admin', 'depot_manager' => __('pending requests, active shipments, low stock, or a tracking number like RF-XXXXXXXX'),
+            'driver' => __('your active deliveries, or a tracking number like RF-XXXXXXXX'),
+            default => __('your requests, or a tracking number like RF-XXXXXXXX'),
+        };
+
+        return __('I can help with quick questions about the platform — try asking about :examples.', ['examples' => $examples]);
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AidRequestController;
+use App\Http\Controllers\AssistantController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\AuthController;
@@ -58,6 +59,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('active')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::post('/assistant/ask', [AssistantController::class, 'ask'])->name('assistant.ask');
         Route::get('/help', fn () => view('help'))->name('help');
         Route::get('/map', [MapController::class, 'show'])->name('map.show');
         Route::get('/reports', [ReportController::class, 'show'])->name('reports.show');
