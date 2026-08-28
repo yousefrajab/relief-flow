@@ -1,4 +1,5 @@
 import './bootstrap';
+import { submitFormOrQueue, syncQueue } from './offline-queue';
 import Alpine from 'alpinejs';
 import L from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -41,4 +42,13 @@ Chart.register(
 window.L = L;
 window.Chart = Chart;
 window.Alpine = Alpine;
+window.ReliefFlowOffline = { submitFormOrQueue, syncQueue };
 Alpine.start();
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Offline support is a progressive enhancement — the app works fine without it.
+        });
+    });
+}

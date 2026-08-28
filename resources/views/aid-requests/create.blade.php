@@ -6,9 +6,22 @@
         </div>
 
         <div class="bg-white border border-ink-100 rounded-2xl p-6 sm:p-8"
-             x-data="{ rows: [{ item_id: '', quantity: 1 }], location: @js(old('location', '')) }"
+             x-data="{ rows: [{ item_id: '', quantity: 1 }], location: @js(old('location', '')), queued: false }"
              x-on:location-picked.window="location = $event.detail">
-            <form method="POST" action="{{ route('aid-requests.store') }}" class="space-y-6">
+            <div x-show="queued" x-cloak class="bg-field-50 border border-field-200 rounded-2xl p-6 text-center space-y-3">
+                <div class="w-12 h-12 rounded-2xl bg-field-100 text-field-600 flex items-center justify-center mx-auto"><x-icon name="check-circle" class="w-6 h-6" /></div>
+                <p class="text-sm font-bold text-field-800">{{ __('Saved offline — this request will be submitted automatically once you\'re back online.') }}</p>
+                <button type="button" x-on:click="queued = false" class="text-[11px] font-bold text-field-700 hover:text-field-800">{{ __('Submit another request') }}</button>
+            </div>
+
+            <form
+                x-show="!queued"
+                method="POST"
+                action="{{ route('aid-requests.store') }}"
+                class="space-y-6"
+                x-on:submit.prevent="window.ReliefFlowOffline.submitFormOrQueue($event.target, @js(__('New Aid Request')))"
+                x-on:reliefflow:queued="queued = true; $event.target.reset(); rows = [{ item_id: '', quantity: 1 }]; location = ''"
+            >
                 @csrf
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
