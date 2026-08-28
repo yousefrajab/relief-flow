@@ -14,7 +14,7 @@ class AidRequestSubmittedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database'];
+        return ['database', 'webpush'];
     }
 
     public function toArray(object $notifiable): array
