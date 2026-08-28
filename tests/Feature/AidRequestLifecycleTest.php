@@ -56,6 +56,7 @@ class AidRequestLifecycleTest extends TestCase
     public function test_dispatch_deducts_stock_and_creates_shipment(): void
     {
         $manager = User::factory()->depotManager()->create();
+        $driver = User::factory()->driver()->create();
         $warehouse = Warehouse::factory()->create();
         $item = Item::factory()->create();
         Inventory::factory()->create(['warehouse_id' => $warehouse->id, 'item_id' => $item->id, 'quantity' => 500]);
@@ -65,8 +66,7 @@ class AidRequestLifecycleTest extends TestCase
 
         $response = $this->actingAs($manager)->post("/aid-requests/{$aidRequest->id}/dispatch", [
             'warehouse_id' => $warehouse->id,
-            'driver_name' => 'Test Driver',
-            'driver_phone' => '0599999999',
+            'driver_user_id' => $driver->id,
         ]);
 
         $response->assertRedirect(route('aid-requests.show', $aidRequest));
@@ -75,6 +75,7 @@ class AidRequestLifecycleTest extends TestCase
         $this->assertDatabaseHas('shipments', [
             'aid_request_id' => $aidRequest->id,
             'warehouse_id' => $warehouse->id,
+            'driver_user_id' => $driver->id,
             'status' => 'dispatched',
         ]);
     }
@@ -82,6 +83,7 @@ class AidRequestLifecycleTest extends TestCase
     public function test_dispatch_fails_when_stock_is_insufficient(): void
     {
         $manager = User::factory()->depotManager()->create();
+        $driver = User::factory()->driver()->create();
         $warehouse = Warehouse::factory()->create();
         $item = Item::factory()->create();
         Inventory::factory()->create(['warehouse_id' => $warehouse->id, 'item_id' => $item->id, 'quantity' => 10]);
@@ -91,8 +93,7 @@ class AidRequestLifecycleTest extends TestCase
 
         $response = $this->actingAs($manager)->post("/aid-requests/{$aidRequest->id}/dispatch", [
             'warehouse_id' => $warehouse->id,
-            'driver_name' => 'Test Driver',
-            'driver_phone' => '0599999999',
+            'driver_user_id' => $driver->id,
         ]);
 
         $response->assertSessionHasErrors('warehouse_id');

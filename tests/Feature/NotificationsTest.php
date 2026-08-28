@@ -86,6 +86,7 @@ class NotificationsTest extends TestCase
         Mail::fake();
 
         $manager = User::factory()->depotManager()->create();
+        $driver = User::factory()->driver()->create();
         $warehouse = Warehouse::factory()->create();
         $item = Item::factory()->create();
         \App\Models\Inventory::create(['warehouse_id' => $warehouse->id, 'item_id' => $item->id, 'quantity' => 500]);
@@ -102,11 +103,11 @@ class NotificationsTest extends TestCase
 
         $this->actingAs($manager)->post("/aid-requests/{$aidRequest->id}/dispatch", [
             'warehouse_id' => $warehouse->id,
-            'driver_name' => 'Test Driver',
-            'driver_phone' => '0599999999',
+            'driver_user_id' => $driver->id,
         ]);
 
         Notification::assertSentTo($aidRequest->user, ShipmentDispatchedNotification::class);
+        Notification::assertSentTo($driver, \App\Notifications\DriverAssignedNotification::class);
     }
 
     public function test_delivery_notifies_active_staff(): void

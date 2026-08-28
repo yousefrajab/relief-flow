@@ -12,6 +12,7 @@ class Shipment extends Model
     protected $fillable = [
         'aid_request_id',
         'warehouse_id',
+        'driver_user_id',
         'driver_name',
         'driver_phone',
         'status',
@@ -34,5 +35,10 @@ class Shipment extends Model
     public function warehouse()
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function driver()
+    {
+        return $this->belongsTo(User::class, 'driver_user_id');
     }
 }

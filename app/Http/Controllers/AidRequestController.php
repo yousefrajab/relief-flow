@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Notifications\AidRequestRejectedNotification;
 use App\Notifications\AidRequestSubmittedNotification;
+use App\Notifications\DriverAssignedNotification;
 use App\Notifications\ShipmentDispatchedNotification;
 use App\Services\AIService;
 use App\Services\LogisticsService;
@@ -22,6 +23,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AidRequestController extends Controller
@@ -164,11 +166,13 @@ class AidRequestController extends Controller
         $aidRequest->load(['requestItems.item', 'user', 'shipment.warehouse', 'activities.user']);
 
         $matches = null;
+        $drivers = collect();
         if ($aidRequest->status === 'pending') {
             $matches = $logisticsService->rankWarehousesFor($aidRequest);
+            $drivers = User::where('role', 'driver')->where('status', 'active')->orderBy('name')->get();
         }
 
-        return view('aid-requests.show', compact('aidRequest', 'matches'));
+        return view('aid-requests.show', compact('aidRequest', 'matches', 'drivers'));
     }
 
     public function reject(Request $request, AidRequest $aidRequest): RedirectResponse
@@ -202,12 +206,12 @@ class AidRequestController extends Controller
 
         $request->validate([
             'warehouse_id' => ['required', 'exists:warehouses,id'],
-            'driver_name' => ['required', 'string', 'min:3', 'max:255'],
-            'driver_phone' => ['required', 'string', 'min:7', 'max:20'],
+            'driver_user_id' => ['required', Rule::exists('users', 'id')->where('role', 'driver')->where('status', 'active')],
         ]);
 
         $aidRequest->load('requestItems.item');
         $warehouse = Warehouse::findOrFail($request->warehouse_id);
+        $driver = User::findOrFail($request->driver_user_id);
 
         foreach ($aidRequest->requestItems as $requestItem) {
             $inventory = Inventory::where('warehouse_id', $warehouse->id)
@@ -228,7 +232,7 @@ class AidRequestController extends Controller
             }
         }
 
-        $shipment = DB::transaction(function () use ($aidRequest, $warehouse, $request) {
+        $shipment = DB::transaction(function () use ($aidRequest, $warehouse, $driver) {
             foreach ($aidRequest->requestItems as $requestItem) {
                 Inventory::where('warehouse_id', $warehouse->id)
                     ->where('item_id', $requestItem->item_id)
@@ -240,8 +244,9 @@ class AidRequestController extends Controller
             return Shipment::create([
                 'aid_request_id' => $aidRequest->id,
                 'warehouse_id' => $warehouse->id,
-                'driver_name' => $request->driver_name,
-                'driver_phone' => $request->driver_phone,
+                'driver_user_id' => $driver->id,
+                'driver_name' => $driver->name,
+                'driver_phone' => $driver->phone,
                 'status' => 'dispatched',
                 'qr_code_token' => 'RF-'.strtoupper(bin2hex(random_bytes(4))),
             ]);
@@ -253,19 +258,22 @@ class AidRequestController extends Controller
             'aid_request_id' => $aidRequest->id,
             'user_id' => Auth::id(),
             'action' => 'dispatched',
-            'notes' => __('From :warehouse, driver :driver', ['warehouse' => $warehouse->name, 'driver' => $request->driver_name]),
+            'notes' => __('From :warehouse, driver :driver', ['warehouse' => $warehouse->name, 'driver' => $driver->name]),
         ]);
 
         $aidRequest->user->notify(new ShipmentDispatchedNotification($shipment));
+        $driver->notify(new DriverAssignedNotification($shipment));
 
-        $trackingUrl = route('tracking.show', $shipment->qr_code_token);
-        $driverMessage = __('New ReliefFlow delivery task: pick up from :warehouse for :location. Track: :url', [
-            'warehouse' => $warehouse->name,
-            'location' => $aidRequest->location,
-            'url' => $trackingUrl,
-        ]);
-        $notificationService->sendSMS($request->driver_phone, $driverMessage);
-        $notificationService->sendWhatsApp($request->driver_phone, $driverMessage);
+        if ($driver->phone) {
+            $trackingUrl = route('tracking.show', $shipment->qr_code_token);
+            $driverMessage = __('New ReliefFlow delivery task: pick up from :warehouse for :location. Track: :url', [
+                'warehouse' => $warehouse->name,
+                'location' => $aidRequest->location,
+                'url' => $trackingUrl,
+            ]);
+            $notificationService->sendSMS($driver->phone, $driverMessage);
+            $notificationService->sendWhatsApp($driver->phone, $driverMessage);
+        }
 
         return redirect()->route('aid-requests.show', $aidRequest)->with('success', __('Shipment dispatched successfully. Tracking token: :token', ['token' => $shipment->qr_code_token]));
     }

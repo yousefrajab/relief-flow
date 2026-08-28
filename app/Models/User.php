@@ -50,6 +50,11 @@ class User extends Authenticatable
         return $this->hasMany(AidRequest::class);
     }
 
+    public function shipmentsAsDriver()
+    {
+        return $this->hasMany(Shipment::class, 'driver_user_id');
+    }
+
     public function sendPasswordResetNotification($token): void
     {
         $this->notify(new ResetPasswordNotification($token));

@@ -38,7 +38,9 @@
                         <a href="{{ route('inventory.index') }}" class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold rounded-xl transition-colors {{ str_starts_with($current, 'inventory.') ? 'bg-field-500 text-white' : 'text-ink-300 hover:bg-white/5 hover:text-white' }}"><x-icon name="inventory" class="w-4.5 h-4.5 shrink-0" /> {{ __('Inventory') }}</a>
                     @endif
 
-                    <a href="{{ route('aid-requests.index') }}" class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold rounded-xl transition-colors {{ str_starts_with($current, 'aid-requests.') ? 'bg-field-500 text-white' : 'text-ink-300 hover:bg-white/5 hover:text-white' }}"><x-icon name="clipboard" class="w-4.5 h-4.5 shrink-0" /> {{ __('Aid Requests') }}</a>
+                    @if(auth()->user()->role !== 'driver')
+                        <a href="{{ route('aid-requests.index') }}" class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold rounded-xl transition-colors {{ str_starts_with($current, 'aid-requests.') ? 'bg-field-500 text-white' : 'text-ink-300 hover:bg-white/5 hover:text-white' }}"><x-icon name="clipboard" class="w-4.5 h-4.5 shrink-0" /> {{ __('Aid Requests') }}</a>
+                    @endif
 
                     <a href="{{ route('map.show') }}" class="flex items-center gap-2.5 px-3 py-2.5 text-xs font-bold rounded-xl transition-colors {{ $current === 'map.show' ? 'bg-field-500 text-white' : 'text-ink-300 hover:bg-white/5 hover:text-white' }}"><x-icon name="map" class="w-4.5 h-4.5 shrink-0" /> {{ __('Map') }}</a>
 
@@ -79,6 +81,7 @@
                                 {{ match(auth()->user()->role) {
                                     'admin' => __('Administrator'),
                                     'depot_manager' => __('Depot Manager'),
+                                    'driver' => __('Delivery Driver'),
                                     default => __('Field Coordinator'),
                                 } }}
                             </p>

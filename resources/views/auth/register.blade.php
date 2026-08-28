@@ -40,6 +40,7 @@
                 <option value="" disabled selected>{{ __('Select your role') }}</option>
                 <option value="depot_manager" {{ old('role') === 'depot_manager' ? 'selected' : '' }}>{{ __('Depot Manager') }}</option>
                 <option value="coordinator" {{ old('role') === 'coordinator' ? 'selected' : '' }}>{{ __('Field Coordinator') }}</option>
+                <option value="driver" {{ old('role') === 'driver' ? 'selected' : '' }}>{{ __('Delivery Driver') }}</option>
             </select>
             <x-input-error :messages="$errors->get('role')" />
         </div>
